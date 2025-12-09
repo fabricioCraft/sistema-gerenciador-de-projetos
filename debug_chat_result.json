@@ -1,0 +1,15 @@
+{
+  "keys": [
+    "_totalUsage",
+    "_finishReason",
+    "_steps",
+    "output",
+    "includeRawChunks",
+    "tools",
+    "addStream",
+    "closeStream",
+    "baseStream"
+  ],
+  "type": "object",
+  "isPromise": false
+}

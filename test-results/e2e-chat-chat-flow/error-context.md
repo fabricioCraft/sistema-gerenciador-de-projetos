@@ -1,0 +1,302 @@
+# Page snapshot
+
+```yaml
+- generic:
+  - generic:
+    - generic:
+      - generic:
+        - generic:
+          - link:
+            - /url: /
+            - img
+            - generic: AI PMP
+        - generic:
+          - navigation:
+            - list:
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: "#"
+                    - img
+                    - generic: Painel
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: "#"
+                    - img
+                    - generic: Tarefas
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: "#"
+                    - img
+                    - generic: Cronograma
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: "#"
+                    - img
+                    - generic: Rede PERT
+              - listitem:
+                - generic:
+                  - link:
+                    - /url: "#"
+                    - img
+                    - generic: Configurações
+    - generic:
+      - banner:
+        - generic:
+          - heading [level=1]: Landing Page de Vendas Digitais — Projeto LP Conversão
+      - main:
+        - generic:
+          - generic:
+            - generic:
+              - tablist:
+                - tab [selected]: Lista
+                - tab: Gantt
+                - tab: Rede PERT
+            - tabpanel:
+              - generic:
+                - generic:
+                  - generic: Tarefas do Projeto
+                  - generic: Lista de todas as tarefas do projeto atual.
+                - generic:
+                  - generic:
+                    - generic:
+                      - table:
+                        - rowgroup:
+                          - row:
+                            - columnheader: Tarefa
+                            - columnheader: Status
+                            - columnheader: Est. (O/M/P)
+                            - columnheader: Duração (PERT)
+                            - columnheader: Dependências
+                        - rowgroup:
+                          - row:
+                            - cell: Kickoff do projeto e planejamento
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/6
+                            - cell: 4h
+                            - cell: "0"
+                          - row:
+                            - cell: Pesquisa de público e proposta de valor
+                            - cell:
+                              - generic: todo
+                            - cell: 6/12/20
+                            - cell: 13h
+                            - cell: "1"
+                          - row:
+                            - cell: Configuração de domínio e DNS
+                            - cell:
+                              - generic: todo
+                            - cell: 1/2/4
+                            - cell: 3h
+                            - cell: "1"
+                          - row:
+                            - cell: Provisionamento de hosting e CDN
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/8
+                            - cell: 5h
+                            - cell: "1"
+                          - row:
+                            - cell: Configuração de SSL/TLS
+                            - cell:
+                              - generic: todo
+                            - cell: 1/2/4
+                            - cell: 3h
+                            - cell: "1"
+                          - row:
+                            - cell: Definição de requisitos e funcionalidades
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "2"
+                          - row:
+                            - cell: Texto legal (política de privacidade, termos)
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/8
+                            - cell: 5h
+                            - cell: "1"
+                          - row:
+                            - cell: Provisionamento do ambiente de staging
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/6
+                            - cell: 4h
+                            - cell: "2"
+                          - row:
+                            - cell: Revisões de design e aprovação final
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "1"
+                          - row:
+                            - cell: Desenvolvimento Front-end (HTML/CSS/JS)
+                            - cell:
+                              - generic: todo
+                            - cell: 20/40/60
+                            - cell: 40h
+                            - cell: "2"
+                          - row:
+                            - cell: Protótipo interativo (Figma/Adobe XD)
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "2"
+                          - row:
+                            - cell: Wireframe / estrutura da página (low-fi)
+                            - cell:
+                              - generic: todo
+                            - cell: 6/10/16
+                            - cell: 11h
+                            - cell: "1"
+                          - row:
+                            - cell: Criação de assets visuais (imagens, ícones)
+                            - cell:
+                              - generic: todo
+                            - cell: 8/16/24
+                            - cell: 16h
+                            - cell: "1"
+                          - row:
+                            - cell: Implementação de analytics e pixels (Google/Meta)
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/6
+                            - cell: 4h
+                            - cell: "2"
+                          - row:
+                            - cell: Configuração de tracking de eventos e metas de conversão
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "2"
+                          - row:
+                            - cell: Preparação para lançamento (checklist e rollback)
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/6
+                            - cell: 4h
+                            - cell: "3"
+                          - row:
+                            - cell: Testes funcionais, cross-browser e responsivos
+                            - cell:
+                              - generic: todo
+                            - cell: 8/16/24
+                            - cell: 16h
+                            - cell: "4"
+                          - row:
+                            - cell: Correções, refinamentos e fechamento de bugs
+                            - cell:
+                              - generic: todo
+                            - cell: 8/16/24
+                            - cell: 16h
+                            - cell: "2"
+                          - row:
+                            - cell: Encerramento do projeto e lições aprendidas
+                            - cell:
+                              - generic: todo
+                            - cell: 2/4/6
+                            - cell: 4h
+                            - cell: "3"
+                          - row:
+                            - cell: Copywriting (conteúdo de conversão)
+                            - cell:
+                              - generic: todo
+                            - cell: 8/16/24
+                            - cell: 16h
+                            - cell: "2"
+                          - row:
+                            - cell: Implementação de responsividade e performance front-end
+                            - cell:
+                              - generic: todo
+                            - cell: 8/16/24
+                            - cell: 16h
+                            - cell: "2"
+                          - row:
+                            - cell: Ajustes de responsividade (design)
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "1"
+                          - row:
+                            - cell: Testes de carga e performance
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "2"
+                          - row:
+                            - cell: Integração com e-mail/CRM/automação
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "2"
+                          - row:
+                            - cell: Desenvolvimento back-end / tratamento de formulário
+                            - cell:
+                              - generic: todo
+                            - cell: 8/16/24
+                            - cell: 16h
+                            - cell: "2"
+                          - row:
+                            - cell: Design visual high-fidelity (desktop + mobile)
+                            - cell:
+                              - generic: todo
+                            - cell: 10/20/30
+                            - cell: 20h
+                            - cell: "3"
+                          - row:
+                            - cell: Documentação técnica e treinamento operacional
+                            - cell:
+                              - generic: todo
+                            - cell: 4/8/12
+                            - cell: 8h
+                            - cell: "3"
+                          - row:
+                            - cell: Lançamento e monitoramento inicial
+                            - cell:
+                              - generic: todo
+                            - cell: 2/6/12
+                            - cell: 7h
+                            - cell: "1"
+                          - row:
+                            - cell: Otimização pós-lançamento (CRO / A/B básico)
+                            - cell:
+                              - generic: todo
+                            - cell: 4/12/24
+                            - cell: 13h
+                            - cell: "2"
+        - button [expanded]:
+          - img
+  - button "Open Next.js Dev Tools" [ref=e6] [cursor=pointer]:
+    - img [ref=e7]
+  - alert
+  - dialog "Assistente de Projeto" [ref=e11]:
+    - generic [ref=e12]:
+      - heading "Assistente de Projeto" [level=2] [ref=e13]:
+        - img [ref=e14]
+        - text: Assistente de Projeto
+      - paragraph [ref=e17]: Gerente virtual conectado ao cronograma.
+    - generic [ref=e18]:
+      - paragraph [ref=e19]: "Status Debug:"
+      - paragraph [ref=e20]: "Qtd Mensagens: 1"
+      - paragraph [ref=e21]: "Erro atual: Nenhum"
+      - generic [ref=e22]: "[ { \"role\": \"user\", \"content\": \"Qual o próximo passo?\", \"id\": \"swMYRW7fYhH9ahp4\" } ]"
+    - paragraph [ref=e26]: Qual o próximo passo?
+    - generic [ref=e28]:
+      - textbox "Digite sua mensagem..." [active] [ref=e29]
+      - button [ref=e30]:
+        - img
+    - button "Close" [ref=e31]:
+      - img [ref=e32]
+      - generic [ref=e35]: Close
+```

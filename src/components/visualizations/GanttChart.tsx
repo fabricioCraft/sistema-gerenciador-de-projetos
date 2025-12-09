@@ -1,0 +1,180 @@
+'use client';
+
+import { Gantt, Task as GanttTask, ViewMode } from 'gantt-task-react';
+import "gantt-task-react/dist/index.css";
+import { useMemo, useState, useRef } from 'react';
+import { calculateSchedule } from '@/lib/scheduler';
+
+// Helper for formatting dates in Portuguese
+const formatDate = (date: Date) => {
+    return date.toLocaleDateString('pt-BR', { day: 'numeric', month: 'short' });
+};
+
+// Custom Tooltip Component (Shadcn Style)
+const CustomTooltip = ({ task, fontSize, fontFamily }: { task: GanttTask, fontSize: string, fontFamily: string }) => {
+    const duration = Math.ceil((task.end.getTime() - task.start.getTime()) / (1000 * 3600 * 24));
+
+    return (
+        <div className="bg-white dark:bg-slate-950 border border-slate-200 dark:border-slate-800 shadow-lg rounded-lg p-3 min-w-[200px] z-50 relative pointer-events-none">
+            <div className="font-bold text-sm mb-1 text-slate-800 dark:text-slate-100" style={{ fontFamily }}>
+                {task.name}
+            </div>
+            <div className="text-xs text-slate-500 dark:text-slate-400 font-medium mb-1" style={{ fontFamily, fontSize }}>
+                {formatDate(task.start)} - {formatDate(task.end)}
+            </div>
+            <div className="text-xs text-slate-400" style={{ fontFamily, fontSize }}>
+                Duração: {duration} {duration === 1 ? 'dia' : 'dias'}
+            </div>
+        </div>
+    );
+};
+
+// Custom List Header (Only Title)
+const TaskListHeader = ({ headerHeight, rowWidth }: any) => {
+    return (
+        <div
+            className="flex items-center border-b border-r border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900"
+            style={{
+                height: headerHeight,
+                fontFamily: "Inter, sans-serif",
+                fontSize: "0.875rem",
+            }}
+        >
+            <div
+                className="px-4 font-semibold text-slate-600 dark:text-slate-300"
+                style={{
+                    minWidth: rowWidth,
+                }}
+            >
+                Tarefa
+            </div>
+        </div>
+    );
+};
+
+// Custom List Table (Only Title)
+const TaskListTable = ({
+    rowHeight,
+    rowWidth,
+    tasks,
+    onExpanderClick,
+}: any) => {
+    return (
+        <div
+            className="border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950"
+            style={{ fontFamily: "Inter, sans-serif", fontSize: "0.875rem" }}
+        >
+            {tasks.map((t: any) => (
+                <div
+                    className="flex items-center border-b border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-900 transition-colors"
+                    style={{ height: rowHeight }}
+                    key={t.id}
+                    onClick={() => onExpanderClick(t)}
+                >
+                    <div
+                        className="px-4 truncate w-full font-medium text-slate-700 dark:text-slate-200"
+                        style={{
+                            minWidth: rowWidth,
+                            maxWidth: rowWidth,
+                        }}
+                        title={t.name}
+                    >
+                        {t.name}
+                    </div>
+                </div>
+            ))}
+        </div>
+    );
+};
+
+export function GanttChart({ tasks }: { tasks: any[] }) {
+    const [viewMode, setViewMode] = useState(ViewMode.Day);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    const scheduledTasks = useMemo(() => {
+        const mappedForScheduler = tasks.map(t => ({
+            id: t.id,
+            title: t.title,
+            duration: Number(t.duration) || 1,
+            dependencies: t.dependencies || [],
+        }));
+
+        const calculated = calculateSchedule(mappedForScheduler);
+
+        return calculated.map(t => ({
+            start: t.startDate!,
+            end: t.endDate!,
+            name: t.title,
+            id: t.id,
+            type: 'task',
+            progress: t.isCritical ? 100 : 50,
+            isDisabled: false,
+            // Enterprise Look Colors
+            styles: {
+                backgroundColor: t.isCritical ? '#ef4444' : '#2563eb', // Red-500 or Blue-600
+                progressColor: t.isCritical ? '#b91c1c' : '#1e40af', // Red-700 or Blue-800
+                progressSelectedColor: t.isCritical ? '#991b1b' : '#1e3a8a',
+            },
+            dependencies: t.dependencies,
+        } as GanttTask));
+    }, [tasks]);
+
+    const handleWheel = (e: React.WheelEvent) => {
+        if (e.shiftKey) return;
+        if (containerRef.current) {
+            containerRef.current.scrollLeft += e.deltaY;
+        }
+    };
+
+    if (tasks.length === 0) return <div>No tasks to display.</div>;
+
+    // Calculate dynamic height: (tasks * rowHeight) + headerHeight (approx 55px) + buffer
+    const ganttHeight = tasks.length * 50 + 60;
+
+    return (
+        <div className="flex flex-col w-full gap-4">
+            <div className="flex gap-2 sticky left-0 z-10 w-fit">
+                <button
+                    onClick={() => setViewMode(ViewMode.Hour)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors border ${viewMode === ViewMode.Hour
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                >
+                    Horas
+                </button>
+                <button
+                    onClick={() => setViewMode(ViewMode.Day)}
+                    className={`px-3 py-1 rounded text-xs font-medium transition-colors border ${viewMode === ViewMode.Day
+                        ? 'bg-slate-900 text-white border-slate-900'
+                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                        }`}
+                >
+                    Dias
+                </button>
+            </div>
+
+            <div
+                ref={containerRef}
+                onWheel={handleWheel}
+                className="w-full border border-slate-200 dark:border-slate-800 rounded-lg shadow-sm overflow-hidden"
+                style={{ height: `${ganttHeight}px` }}
+            >
+                <Gantt
+                    tasks={scheduledTasks}
+                    viewMode={viewMode}
+                    columnWidth={65}
+                    listCellWidth="350px"
+                    rowHeight={50}
+                    barFill={60}
+                    barCornerRadius={4}
+                    fontFamily="Inter, sans-serif"
+                    TooltipContent={CustomTooltip}
+                    TaskListHeader={TaskListHeader}
+                    TaskListTable={TaskListTable}
+                    locale="pt-BR"
+                />
+            </div>
+        </div>
+    );
+}

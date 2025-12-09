@@ -1,0 +1,94 @@
+import { openai } from '@ai-sdk/openai';
+import { streamText, tool } from 'ai';
+import { z } from 'zod';
+import { createTask, updateTaskStatus } from '@/actions';
+
+export const maxDuration = 30;
+
+export async function POST(req: Request) {
+    const { messages, projectId } = await req.json() as { messages: any[], projectId: string };
+
+    // Fetch project tasks to provide context
+    let projectContext = "";
+    try {
+        const { getProject } = await import('@/actions'); // Dynamic import to avoid circular dep issues if any, or just standard import
+        const project = await getProject(projectId);
+        if (project.success && project.data) {
+            const tasksSummary = project.data.tasks.map((t: any) => ({
+                id: t.id,
+                title: t.title,
+                status: t.status,
+                startDate: t.startDate,
+                endDate: t.endDate,
+                duration: t.duration,
+                dependencies: t.dependencies
+            }));
+            projectContext = JSON.stringify(tasksSummary, null, 2);
+        }
+    } catch (error) {
+        console.error("Failed to load project context", error);
+    }
+
+    const result = streamText({
+        model: openai('gpt-4o'),
+        messages,
+        system: `Você é um Gerente de Projetos PMP especialista (IA). 
+    Você está gerenciando um projeto (ID: ${projectId}).
+    
+    CONTEXTO DO PROJETO (TAREFAS ATUAIS):
+    ${projectContext}
+
+    Você tem ferramentas para criar tarefas, atualizar status e analisar o projeto.
+    Sempre seja profissional, proativo e use termos padrão da indústria (Caminho Crítico, Folga, EAP).
+    Responda sempre em Português do Brasil (pt-BR).
+    Se o usuário perguntar sobre o cronograma, analise os dados das tarefas acima.`,
+        tools: {
+            create_task: tool({
+                description: 'Criar uma nova tarefa no projeto',
+                parameters: z.object({
+                    title: z.string(),
+                    description: z.string().optional(),
+                    estOptimistic: z.number().describe('Estimativa Otimista em horas'),
+                    estLikely: z.number().describe('Estimativa Mais Provável em horas'),
+                    estPessimistic: z.number().describe('Estimativa Pessimista em horas'),
+                    dependencies: z.array(z.string()).optional().describe('IDs das tarefas dependentes'),
+                }),
+                // @ts-ignore
+                execute: async (props: { title: string, description?: string, estOptimistic: number, estLikely: number, estPessimistic: number, dependencies?: string[] }) => {
+                    const result = await createTask({ ...props, projectId });
+                    if (result.success) {
+                        return `Tarefa "${props.title}" criada com sucesso (ID: ${result.data?.id}). Duração: ${result.data?.duration}h.`;
+                    } else {
+                        return `Falha ao criar tarefa: ${result.error}`;
+                    }
+                },
+            }) as any,
+            update_status: tool({
+                description: 'Atualizar o status de uma tarefa',
+                parameters: z.object({
+                    taskId: z.string(),
+                    status: z.enum(['todo', 'in_progress', 'done']),
+                }),
+                // @ts-ignore
+                execute: async (args: { taskId: string, status: "todo" | "in_progress" | "done" }) => {
+                    const result = await updateTaskStatus(args.taskId, args.status);
+                    if (result.success) return `Tarefa ${args.taskId} movida para ${args.status}.`;
+                    return `Falha ao atualizar tarefa: ${result.error}`;
+                },
+            }) as any,
+            consult_delays: tool({
+                description: 'Analisar impacto de atrasos (Placeholder)',
+                parameters: z.object({
+                    taskId: z.string(),
+                    delayHours: z.number(),
+                }),
+                // @ts-ignore
+                execute: async (args: { taskId: string, delayHours: number }) => {
+                    return `Análise: Atrasar a tarefa ${args.taskId} em ${args.delayHours} horas pode impactar o Caminho Crítico. (Análise detalhada pendente de implementação).`;
+                }
+            })
+        },
+    });
+
+    return (result as any).toDataStreamResponse();
+}
