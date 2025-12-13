@@ -15,7 +15,8 @@ export default async function DashboardLayout({
     // We'll await it if needed or check type.
     // Assuming standard Next.js 14/15 behavior.
 
-    const { projectId } = await params; // Await params if it's a promise (Next 15)
+    const paramsData = await params;
+    const projectId = decodeURIComponent(paramsData.projectId);
 
     const result = await getProject(projectId);
     if (!result.success || !result.data) {
@@ -27,7 +28,7 @@ export default async function DashboardLayout({
 
     return (
         <div className="grid min-h-screen w-full lg:grid-cols-[240px_1fr]">
-            <AppSidebar />
+            <AppSidebar projectId={projectId} />
             <div className="flex flex-col">
                 <DashboardHeader projectName={project.name} />
                 <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 pb-20 relative">

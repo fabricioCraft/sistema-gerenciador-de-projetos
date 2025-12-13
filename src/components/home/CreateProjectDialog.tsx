@@ -44,9 +44,8 @@ export function CreateProjectDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button size="lg" className="rounded-full px-8 py-6 text-lg shadow-lg hover:shadow-xl transition-all hover:scale-105 bg-blue-600 hover:bg-blue-700 text-white">
-                    <Rocket className="mr-2 h-5 w-5" />
-                    Iniciar Novo Projeto
+                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                    Novo Projeto <Plus className="h-4 w-4" />
                 </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">

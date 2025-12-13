@@ -4,6 +4,7 @@ import { Gantt, Task as GanttTask, ViewMode } from 'gantt-task-react';
 import "gantt-task-react/dist/index.css";
 import { useMemo, useState, useRef } from 'react';
 import { calculateSchedule } from '@/lib/scheduler';
+import { updateTaskAndPropagate, auditSchedule } from '@/actions';
 
 // Helper for formatting dates in Portuguese
 const formatDate = (date: Date) => {
@@ -87,9 +88,10 @@ const TaskListTable = ({
     );
 };
 
-export function GanttChart({ tasks }: { tasks: any[] }) {
+export function GanttChart({ tasks, projectId }: { tasks: any[], projectId: string }) {
     const [viewMode, setViewMode] = useState(ViewMode.Day);
     const containerRef = useRef<HTMLDivElement>(null);
+    const [isUpdating, setIsUpdating] = useState(false);
 
     const scheduledTasks = useMemo(() => {
         const mappedForScheduler = tasks.map(t => ({
@@ -101,23 +103,74 @@ export function GanttChart({ tasks }: { tasks: any[] }) {
 
         const calculated = calculateSchedule(mappedForScheduler);
 
-        return calculated.map(t => ({
-            start: t.startDate!,
-            end: t.endDate!,
-            name: t.title,
-            id: t.id,
-            type: 'task',
-            progress: t.isCritical ? 100 : 50,
-            isDisabled: false,
-            // Enterprise Look Colors
-            styles: {
-                backgroundColor: t.isCritical ? '#ef4444' : '#2563eb', // Red-500 or Blue-600
-                progressColor: t.isCritical ? '#b91c1c' : '#1e40af', // Red-700 or Blue-800
-                progressSelectedColor: t.isCritical ? '#991b1b' : '#1e3a8a',
-            },
-            dependencies: t.dependencies,
-        } as GanttTask));
+        return calculated.map(t => {
+            // Priority: DB Date > Calculated Date
+            // This ensures manual overrides (stored in DB) are respected
+            const original = tasks.find(dbT => dbT.id === t.id);
+            const start = original?.startDate ? new Date(original.startDate) : t.startDate!;
+            const end = original?.endDate ? new Date(original.endDate) : t.endDate!;
+
+            return {
+                start: start,
+                end: end,
+                name: t.title,
+                id: t.id,
+                type: 'task',
+                progress: t.isCritical ? 100 : 50,
+                isDisabled: false,
+                // Enterprise Look Colors
+                styles: {
+                    backgroundColor: t.isCritical ? '#ef4444' : '#2563eb', // Red-500 or Blue-600
+                    progressColor: t.isCritical ? '#b91c1c' : '#1e40af', // Red-700 or Blue-800
+                    progressSelectedColor: t.isCritical ? '#991b1b' : '#1e3a8a',
+                },
+                dependencies: t.dependencies,
+            } as GanttTask;
+        });
     }, [tasks]);
+
+    const handleTaskChange = async (task: GanttTask) => {
+        setIsUpdating(true);
+        // Toast simulation as requested
+        console.log("Reagendando projeto...", "Calculando impacto nas dependências.");
+
+        try {
+            const result = await updateTaskAndPropagate(task.id, task.start, task.end);
+
+            if (result.success) {
+                console.log("Cronograma atualizado com sucesso!");
+            } else {
+                alert("Erro ao mover tarefa: " + result.error);
+            }
+        } catch (e: any) {
+            alert("Erro crítico: " + e.message);
+        } finally {
+            setIsUpdating(false);
+        }
+    };
+
+    const handleAudit = async () => {
+        if (!confirm("Executar Auditoria de Prazos com IA (Simulação)?")) return;
+
+        const result = await auditSchedule(projectId);
+        if (result.success && result.data) {
+            const issues = result.data;
+            if (issues.length === 0) {
+                alert("Cronograma saudável! Nenhuma tarefa atrasada encontrada.");
+            } else {
+                const msg = `Encontradas ${issues.length} tarefas atrasadas.\n` +
+                    issues.map((i: any) => `- ${i.taskTitle}: Atrasada em ${i.delay} dias. Sugestão: Mover para ${new Date(i.proposedEnd).toLocaleDateString()}`).join('\n');
+
+                if (confirm(msg + "\n\nAplicar correções automaticamente?")) {
+                    // Apply fixes loop
+                    for (const issue of issues) {
+                        await updateTaskAndPropagate(issue.taskId, new Date(), new Date(issue.proposedEnd)); // Start today, End Proposed
+                    }
+                    alert("Correções aplicadas!");
+                }
+            }
+        }
+    };
 
     const handleWheel = (e: React.WheelEvent) => {
         if (e.shiftKey) return;
@@ -133,26 +186,37 @@ export function GanttChart({ tasks }: { tasks: any[] }) {
 
     return (
         <div className="flex flex-col w-full gap-4">
-            <div className="flex gap-2 sticky left-0 z-10 w-fit">
+            <div className="flex gap-2 sticky left-0 z-10 w-full justify-between items-center">
+                <div className="flex gap-2">
+                    <button
+                        onClick={() => setViewMode(ViewMode.Hour)}
+                        className={`px-3 py-1 rounded text-xs font-medium transition-colors border ${viewMode === ViewMode.Hour
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                    >
+                        Horas
+                    </button>
+                    <button
+                        onClick={() => setViewMode(ViewMode.Day)}
+                        className={`px-3 py-1 rounded text-xs font-medium transition-colors border ${viewMode === ViewMode.Day
+                            ? 'bg-slate-900 text-white border-slate-900'
+                            : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
+                            }`}
+                    >
+                        Dias
+                    </button>
+                </div>
+
                 <button
-                    onClick={() => setViewMode(ViewMode.Hour)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors border ${viewMode === ViewMode.Hour
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
+                    onClick={handleAudit}
+                    className="flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 rounded text-xs font-medium hover:bg-amber-200 transition-colors"
                 >
-                    Horas
-                </button>
-                <button
-                    onClick={() => setViewMode(ViewMode.Day)}
-                    className={`px-3 py-1 rounded text-xs font-medium transition-colors border ${viewMode === ViewMode.Day
-                        ? 'bg-slate-900 text-white border-slate-900'
-                        : 'bg-white text-slate-600 border-slate-200 hover:bg-slate-50'
-                        }`}
-                >
-                    Dias
+                    ⚠️ Auditar Prazos (IA)
                 </button>
             </div>
+
+            {isUpdating && <div className="text-xs text-blue-600 animate-pulse">Synchronizing changes...</div>}
 
             <div
                 ref={containerRef}
@@ -173,6 +237,7 @@ export function GanttChart({ tasks }: { tasks: any[] }) {
                     TaskListHeader={TaskListHeader}
                     TaskListTable={TaskListTable}
                     locale="pt-BR"
+                    onDateChange={handleTaskChange}
                 />
             </div>
         </div>

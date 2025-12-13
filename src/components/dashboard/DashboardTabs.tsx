@@ -6,7 +6,7 @@ import { GanttChart } from '@/components/visualizations/GanttChart';
 import { NetworkGraph } from '@/components/visualizations/NetworkGraph';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
-export function DashboardTabs({ tasks }: { tasks: any[] }) {
+export function DashboardTabs({ tasks, projectId }: { tasks: any[], projectId: string }) {
     return (
         <Tabs defaultValue="list" className="w-full">
             <div className="flex items-center justify-between">
@@ -34,7 +34,7 @@ export function DashboardTabs({ tasks }: { tasks: any[] }) {
                         <CardDescription>Visualização em Gráfico de Gantt.</CardDescription>
                     </CardHeader>
                     <CardContent className="h-[500px]">
-                        <GanttChart tasks={tasks} />
+                        <GanttChart tasks={tasks} projectId={projectId} />
                     </CardContent>
                 </Card>
             </TabsContent>
