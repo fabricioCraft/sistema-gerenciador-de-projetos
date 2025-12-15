@@ -29,5 +29,10 @@ export const tasks = pgTable("tasks", {
     // Dependencies: Array of Task IDs
     dependencies: text("dependencies").array(),
 
+    // Assignment & Priority
+    assignedTo: text("assigned_to"), // User ID or name
+    priority: text("priority"), // urgent, high, medium, low
+
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+

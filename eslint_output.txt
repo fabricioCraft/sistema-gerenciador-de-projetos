@@ -1,0 +1,101 @@
+
+C:\repositories\sistema-gerenciador-de-projetos\src\actions\ai-actions.ts
+  93:13  error  Use "@ts-expect-error" instead of "@ts-ignore", as "@ts-ignore" will do nothing if the following line is error-free  @typescript-eslint/ban-ts-comment
+
+C:\repositories\sistema-gerenciador-de-projetos\src\actions\index.ts
+  111:14  warning  'error' is defined but never used         @typescript-eslint/no-unused-vars
+  119:71  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  175:21  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\actions\scheduler.ts
+  5:14  warning  'inArray' is defined but never used  @typescript-eslint/no-unused-vars
+  6:20  warning  'max' is defined but never used      @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\app\api\chat\route.ts
+   2:22  warning  'convertToCoreMessages' is defined but never used  @typescript-eslint/no-unused-vars
+  13:23  warning  'projectId' is assigned a value but never used     @typescript-eslint/no-unused-vars
+  26:43  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\app\dashboard\[projectId]\page.tsx
+  11:28  warning  'startOfToday' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\app\page.tsx
+  10:28  warning  'ArrowRight' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\chat\ChatSidebar.tsx
+  24:10  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  24:18  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  50:43  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  69:78  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\chat\ProjectChatAssistant.tsx
+   15:32   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   18:24   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   22:29   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   25:10   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   25:18   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   27:79   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   33:28   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   33:66   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+   40:20   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+  110:67   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:91   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:96   error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  110:117  error  `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`  react/no-unescaped-entities
+  113:39   error  Unexpected any. Specify a different type                         @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\dashboard\AIInsightCard.tsx
+  39:22  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\dashboard\AppSidebar.tsx
+  6:30  warning  'asChild' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\dashboard\DashboardTabs.tsx
+  9:62  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\dashboard\Header.tsx
+  1:10  warning  'Button' is defined but never used         @typescript-eslint/no-unused-vars
+  2:10  warning  'MessageSquare' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\dashboard\TaskDistributionChart.tsx
+   4:53  warning  'YAxis' is defined but never used         @typescript-eslint/no-unused-vars
+  17:52  error    Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\home\CreateProjectDialog.tsx
+  14:35  warning  'Rocket' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\kanban\TaskBoard.tsx
+    5:10   warning  'Card' is defined but never used                   @typescript-eslint/no-unused-vars
+    5:16   warning  'CardContent' is defined but never used            @typescript-eslint/no-unused-vars
+    5:29   warning  'CardDescription' is defined but never used        @typescript-eslint/no-unused-vars
+    5:46   warning  'CardHeader' is defined but never used             @typescript-eslint/no-unused-vars
+    5:58   warning  'CardTitle' is defined but never used              @typescript-eslint/no-unused-vars
+   23:5    warning  'SheetDescription' is defined but never used       @typescript-eslint/no-unused-vars
+  101:50   warning  'projectId' is defined but never used              @typescript-eslint/no-unused-vars
+  103:11   warning  'searchParams' is assigned a value but never used  @typescript-eslint/no-unused-vars
+  159:18   warning  'error' is defined but never used                  @typescript-eslint/no-unused-vars
+  175:18   warning  'e' is defined but never used                      @typescript-eslint/no-unused-vars
+  412:160  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+  451:152  error    Unexpected any. Specify a different type           @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\ui\dropdown-menu.tsx
+  56:5  warning  'variant' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\visualizations\GanttChart.tsx
+   34:53  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   62:4   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   68:28  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   91:59  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  205:21  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  222:36  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\visualizations\NetworkGraph.tsx
+  10:5   warning  'useNodesState' is defined but never used  @typescript-eslint/no-unused-vars
+  11:5   warning  'useEdgesState' is defined but never used  @typescript-eslint/no-unused-vars
+  57:50  error    Unexpected any. Specify a different type   @typescript-eslint/no-explicit-any
+
+C:\repositories\sistema-gerenciador-de-projetos\src\components\visualizations\TaskTable.tsx
+  13:47  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+✖ 60 problems (34 errors, 26 warnings)
+

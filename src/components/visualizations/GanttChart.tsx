@@ -3,8 +3,9 @@
 import { Gantt, Task as GanttTask, ViewMode } from 'gantt-task-react';
 import "gantt-task-react/dist/index.css";
 import { useMemo, useState, useRef } from 'react';
-import { calculateSchedule } from '@/lib/scheduler';
 import { updateTaskAndPropagate, auditSchedule } from '@/actions';
+import { SyncScheduleButton } from '@/components/dashboard/SyncScheduleButton';
+import { toast } from 'sonner';
 
 // Helper for formatting dates in Portuguese
 const formatDate = (date: Date) => {
@@ -94,56 +95,129 @@ export function GanttChart({ tasks, projectId }: { tasks: any[], projectId: stri
     const [isUpdating, setIsUpdating] = useState(false);
 
     const scheduledTasks = useMemo(() => {
-        const mappedForScheduler = tasks.map(t => ({
-            id: t.id,
-            title: t.title,
-            duration: Number(t.duration) || 1,
-            dependencies: t.dependencies || [],
-        }));
+        // Build a map for quick lookup
+        const taskMap = new Map(tasks.map(t => [t.id, t]));
 
-        const calculated = calculateSchedule(mappedForScheduler);
+        // Calculate critical path based on dependencies
+        // A task is critical if it has zero slack (no buffer time)
+        // For simplicity: tasks with dependencies on the longest chain are critical
+        const calculateCriticalPath = () => {
+            const criticalIds = new Set<string>();
 
-        return calculated.map(t => {
-            // Priority: DB Date > Calculated Date
-            // This ensures manual overrides (stored in DB) are respected
-            const original = tasks.find(dbT => dbT.id === t.id);
-            const start = original?.startDate ? new Date(original.startDate) : t.startDate!;
-            const end = original?.endDate ? new Date(original.endDate) : t.endDate!;
+            // Find the task with the latest end date (project end)
+            let maxEndTime = 0;
+            let endTaskId: string | null = null;
 
-            return {
-                start: start,
-                end: end,
-                name: t.title,
-                id: t.id,
-                type: 'task',
-                progress: t.isCritical ? 100 : 50,
-                isDisabled: false,
-                // Enterprise Look Colors
-                styles: {
-                    backgroundColor: t.isCritical ? '#ef4444' : '#2563eb', // Red-500 or Blue-600
-                    progressColor: t.isCritical ? '#b91c1c' : '#1e40af', // Red-700 or Blue-800
-                    progressSelectedColor: t.isCritical ? '#991b1b' : '#1e3a8a',
-                },
-                dependencies: t.dependencies,
-            } as GanttTask;
-        });
+            tasks.forEach(t => {
+                if (t.endDate) {
+                    const endTime = new Date(t.endDate).getTime();
+                    if (endTime > maxEndTime) {
+                        maxEndTime = endTime;
+                        endTaskId = t.id;
+                    }
+                }
+            });
+
+            // Trace back from end task through dependencies
+            const traceBack = (taskId: string) => {
+                criticalIds.add(taskId);
+                const task = taskMap.get(taskId);
+                if (!task) return;
+
+                const deps = task.dependencies || [];
+                if (deps.length === 0) return;
+
+                // Find the dependency that ends latest (critical predecessor)
+                let latestDep: string | null = null;
+                let latestEnd = 0;
+
+                deps.forEach((depId: string) => {
+                    const dep = taskMap.get(depId);
+                    if (dep?.endDate) {
+                        const depEnd = new Date(dep.endDate).getTime();
+                        if (depEnd > latestEnd) {
+                            latestEnd = depEnd;
+                            latestDep = depId;
+                        }
+                    }
+                });
+
+                if (latestDep) {
+                    traceBack(latestDep);
+                }
+            };
+
+            if (endTaskId) {
+                traceBack(endTaskId);
+            }
+
+            return criticalIds;
+        };
+
+        const criticalIds = calculateCriticalPath();
+
+        // Helper to normalize dates using UTC components to match Supabase storage
+        // This ensures the displayed date matches what's stored in the database
+        const normalizeToLocalDate = (dateInput: string | Date): Date => {
+            const date = new Date(dateInput);
+            // Use UTC components to avoid timezone shift
+            return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate(), 12, 0, 0);
+        };
+
+        return tasks
+            .filter(t => t.startDate && t.endDate) // Only show tasks with dates
+            .map(t => {
+                const start = normalizeToLocalDate(t.startDate);
+                const end = normalizeToLocalDate(t.endDate);
+                const isCritical = criticalIds.has(t.id);
+
+                return {
+                    start: start,
+                    end: end,
+                    name: t.title,
+                    id: t.id,
+                    type: 'task',
+                    progress: isCritical ? 100 : 50,
+                    isDisabled: false,
+                    // Enterprise Look Colors
+                    styles: {
+                        backgroundColor: isCritical ? '#ef4444' : '#2563eb', // Red-500 or Blue-600
+                        progressColor: isCritical ? '#b91c1c' : '#1e40af', // Red-700 or Blue-800
+                        progressSelectedColor: isCritical ? '#991b1b' : '#1e3a8a',
+                    },
+                    dependencies: t.dependencies || [],
+                } as GanttTask;
+            });
     }, [tasks]);
 
     const handleTaskChange = async (task: GanttTask) => {
         setIsUpdating(true);
-        // Toast simulation as requested
-        console.log("Reagendando projeto...", "Calculando impacto nas dependências.");
+
+        // Mostra toast de loading enquanto recalcula
+        const loadingToastId = toast.loading('Reagendando tarefa...', {
+            description: 'Calculando impacto nas dependências.'
+        });
 
         try {
             const result = await updateTaskAndPropagate(task.id, task.start, task.end);
 
+            // Fecha o toast de loading
+            toast.dismiss(loadingToastId);
+
             if (result.success) {
-                console.log("Cronograma atualizado com sucesso!");
+                toast.success('Cronograma atualizado!', {
+                    description: 'A tarefa e suas dependências foram reagendadas.'
+                });
             } else {
-                alert("Erro ao mover tarefa: " + result.error);
+                toast.error('Erro ao mover tarefa', {
+                    description: result.error || 'Erro desconhecido.'
+                });
             }
         } catch (e: any) {
-            alert("Erro crítico: " + e.message);
+            toast.dismiss(loadingToastId);
+            toast.error('Erro crítico', {
+                description: e.message || 'Erro ao atualizar tarefa.'
+            });
         } finally {
             setIsUpdating(false);
         }
@@ -152,21 +226,41 @@ export function GanttChart({ tasks, projectId }: { tasks: any[], projectId: stri
     const handleAudit = async () => {
         if (!confirm("Executar Auditoria de Prazos com IA (Simulação)?")) return;
 
+        // Mostra toast de loading durante a auditoria
+        const loadingToastId = toast.loading('Auditando cronograma...', {
+            description: 'Analisando tarefas atrasadas.'
+        });
+
         const result = await auditSchedule(projectId);
+
+        // Fecha o toast de loading
+        toast.dismiss(loadingToastId);
+
         if (result.success && result.data) {
             const issues = result.data;
             if (issues.length === 0) {
-                alert("Cronograma saudável! Nenhuma tarefa atrasada encontrada.");
+                toast.success('Cronograma saudável!', {
+                    description: 'Nenhuma tarefa atrasada encontrada.'
+                });
             } else {
                 const msg = `Encontradas ${issues.length} tarefas atrasadas.\n` +
                     issues.map((i: any) => `- ${i.taskTitle}: Atrasada em ${i.delay} dias. Sugestão: Mover para ${new Date(i.proposedEnd).toLocaleDateString()}`).join('\n');
 
                 if (confirm(msg + "\n\nAplicar correções automaticamente?")) {
+                    // Mostra toast de loading durante as correções
+                    const fixingToastId = toast.loading('Aplicando correções...', {
+                        description: `Reagendando ${issues.length} tarefas.`
+                    });
+
                     // Apply fixes loop
                     for (const issue of issues) {
                         await updateTaskAndPropagate(issue.taskId, new Date(), new Date(issue.proposedEnd)); // Start today, End Proposed
                     }
-                    alert("Correções aplicadas!");
+
+                    toast.dismiss(fixingToastId);
+                    toast.success('Correções aplicadas!', {
+                        description: `${issues.length} tarefas foram reagendadas.`
+                    });
                 }
             }
         }
@@ -208,12 +302,16 @@ export function GanttChart({ tasks, projectId }: { tasks: any[], projectId: stri
                     </button>
                 </div>
 
-                <button
-                    onClick={handleAudit}
-                    className="flex items-center gap-2 px-3 py-1 bg-amber-100 text-amber-800 border border-amber-200 rounded text-xs font-medium hover:bg-amber-200 transition-colors"
-                >
-                    ⚠️ Auditar Prazos (IA)
-                </button>
+                <div className="flex gap-2 items-center">
+                    <SyncScheduleButton projectId={projectId} variant="outline" size="sm" />
+
+                    <button
+                        onClick={handleAudit}
+                        className="flex items-center gap-2 px-3 py-1.5 bg-amber-100 text-amber-800 border border-amber-200 rounded text-xs font-medium hover:bg-amber-200 transition-colors"
+                    >
+                        ⚠️ Auditar Prazos (IA)
+                    </button>
+                </div>
             </div>
 
             {isUpdating && <div className="text-xs text-blue-600 animate-pulse">Synchronizing changes...</div>}

@@ -7,6 +7,7 @@ import { db } from '@/db';
 import { projects, tasks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
+import { calculateProjectSchedule } from './scheduler';
 
 const TaskSchema = z.object({
     title: z.string(),
@@ -92,6 +93,10 @@ export async function generateAndCreateProject(userDescription: string) {
             // @ts-ignore
             await Promise.all(updates);
         }
+
+        // 4. Calculate and persist schedule (CPM/PERT dates)
+        // This runs ONCE at project creation to fill start_date and end_date
+        await calculateProjectSchedule(newProject.id);
 
         revalidatePath('/');
         return { success: true, projectId: newProject.id };

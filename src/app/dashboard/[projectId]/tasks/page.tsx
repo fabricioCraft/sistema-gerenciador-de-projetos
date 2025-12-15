@@ -2,9 +2,17 @@ import { getProject } from '@/actions';
 import { TaskBoard } from '@/components/kanban/TaskBoard';
 import { calculateSchedule } from '@/lib/scheduler';
 
-export default async function TasksPage({ params }: { params: Promise<{ projectId: string }> }) {
+type PageProps = {
+    params: Promise<{ projectId: string }>;
+    searchParams: Promise<{ task?: string }>;
+};
+
+export default async function TasksPage({ params, searchParams }: PageProps) {
     const paramsData = await params;
+    const searchParamsData = await searchParams;
     const projectId = decodeURIComponent(paramsData.projectId);
+    const highlightedTaskId = searchParamsData.task || null;
+
     const result = await getProject(projectId);
 
     if (!result.success || !result.data) return <div>Project not found</div>;
@@ -24,14 +32,16 @@ export default async function TasksPage({ params }: { params: Promise<{ projectI
     const scheduleMap = new Map(calculatedSchedule.map(t => [t.id, t]));
 
     // 3. Merge 'isCritical' back into display tasks
+    // IMPORTANT: Prioritize database dates (t.startDate, t.endDate) over calculated dates
+    // Calculated dates are only used as fallback when database dates are null
     const tasksWithCriticalInfo = tasks.map(t => {
         const scheduled = scheduleMap.get(t.id);
         return {
             ...t,
             isCritical: scheduled?.isCritical || false,
-            // Override with calculated dates for visualization
-            startDate: scheduled?.startDate || t.startDate,
-            endDate: scheduled?.endDate || t.endDate,
+            // Use database dates first, fall back to calculated dates only if null
+            startDate: t.startDate || scheduled?.startDate,
+            endDate: t.endDate || scheduled?.endDate,
         };
     });
 
@@ -61,7 +71,11 @@ export default async function TasksPage({ params }: { params: Promise<{ projectI
             </div>
 
             <div className="flex-1 overflow-hidden">
-                <TaskBoard tasks={sortedTasks} projectId={projectId} />
+                <TaskBoard
+                    tasks={sortedTasks}
+                    projectId={projectId}
+                    highlightedTaskId={highlightedTaskId}
+                />
             </div>
         </div>
     );

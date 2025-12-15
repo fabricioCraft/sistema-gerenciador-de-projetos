@@ -1,11 +1,13 @@
 import { getProject } from '@/actions';
+import Link from 'next/link';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { calculateSchedule } from '@/lib/scheduler';
-import { AlertCircle, Calendar, CheckCircle2, Target, PlayCircle, AlertTriangle, ArrowUpRight } from 'lucide-react';
+import { AlertCircle, Calendar, CheckCircle2, Target, PlayCircle, AlertTriangle, ArrowRight, ExternalLink } from 'lucide-react';
 import { format, isBefore, startOfToday, addDays, differenceInCalendarDays } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { TaskDistributionChart } from '@/components/dashboard/TaskDistributionChart';
@@ -61,14 +63,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
     const overdueCount = overdueTasks.length;
 
     // Split Critical Tasks (Urgent vs Safe)
+    // isCritical comes from scheduler, but dates come from Supabase
     const criticalTasks = tasks.map(t => {
         const cal = calculatedMap.get(t.id);
-        return { ...t, isCritical: cal?.isCritical, calculatedEnd: cal?.endDate };
+        return { ...t, isCritical: cal?.isCritical };
     }).filter(t => t.isCritical && t.status !== 'done');
 
     const criticalUrgent = criticalTasks.filter(t => {
-        if (!t.calculatedEnd) return false;
-        const end = new Date(t.calculatedEnd);
+        if (!t.endDate) return false;
+        const end = new Date(t.endDate);
         end.setHours(0, 0, 0, 0);
         return isBefore(end, addDays(today, 5)); // Urgent if due in < 5 days (includes overdue)
     }).length;
@@ -119,7 +122,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
         critical_safe: criticalSafe
     };
 
-    const projectEndDate = calculatedTasks.reduce((latest, task) => {
+    // Project end date: use the latest endDate from Supabase data
+    const projectEndDate = tasks.reduce((latest, task) => {
         if (!task.endDate) return latest;
         const end = new Date(task.endDate);
         return !latest || end > latest ? end : latest;
@@ -236,7 +240,11 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
                                 <div className="divide-y">
                                     {/* Overdue Items */}
                                     {overdueTasks.map(task => (
-                                        <div key={task.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex items-center gap-4 group">
+                                        <Link
+                                            key={task.id}
+                                            href={`/dashboard/${projectId}/tasks?task=${task.id}`}
+                                            className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex items-center gap-4 group cursor-pointer"
+                                        >
                                             <div className="h-2 w-2 rounded-full bg-red-500 shrink-0" />
                                             <div className="flex-1 min-w-0">
                                                 <div className="flex items-center gap-2 mb-1">
@@ -249,8 +257,15 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
                                                     ATRASADO • {task.endDate ? format(new Date(task.endDate), "dd/MM") : 'N/A'}
                                                 </p>
                                             </div>
-                                            <Badge variant="outline" className="shrink-0 bg-white">Action</Badge>
-                                        </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                className="shrink-0 h-8 px-3 cursor-pointer bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-slate-300 dark:border-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-300 dark:hover:bg-indigo-950 dark:hover:text-indigo-400 dark:hover:border-indigo-700 group/btn"
+                                            >
+                                                Abrir
+                                                <ExternalLink className="h-3 w-3 ml-1.5 transition-transform group-hover/btn:translate-x-0.5" />
+                                            </Button>
+                                        </Link>
                                     ))}
 
                                     {/* Upcoming Items */}
@@ -273,17 +288,32 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
                                         }
 
                                         return (
-                                            <div key={task.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex items-center gap-4">
+                                            <Link
+                                                key={task.id}
+                                                href={`/dashboard/${projectId}/tasks?task=${task.id}`}
+                                                className="p-4 hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors flex items-center gap-4 group cursor-pointer"
+                                            >
                                                 <div className={`h-2 w-2 rounded-full ${iconColor} shrink-0`} />
                                                 <div className="flex-1 min-w-0">
                                                     <div className="flex items-center gap-2 mb-1">
                                                         <span className="font-medium truncate text-sm text-slate-700 dark:text-slate-200">{task.title}</span>
+                                                        {calculatedMap.get(task.id)?.isCritical && (
+                                                            <Badge variant="destructive" className="h-4 px-1.5 text-[10px] shrink-0">Crítico</Badge>
+                                                        )}
                                                     </div>
                                                     <p className={`text-xs ${colorClass} flex items-center gap-1`}>
                                                         {label}
                                                     </p>
                                                 </div>
-                                            </div>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="sm"
+                                                    className="shrink-0 h-8 px-3 cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-950 dark:hover:text-indigo-400 group/btn"
+                                                >
+                                                    Abrir
+                                                    <ExternalLink className="h-3 w-3 ml-1.5 transition-transform group-hover/btn:translate-x-0.5" />
+                                                </Button>
+                                            </Link>
                                         );
                                     })}
                                 </div>
@@ -324,10 +354,13 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
                                     ))
                                 )}
                             </div>
-                            <div className="mt-4 pt-4 border-t">
-                                <button className="text-xs text-indigo-600 font-medium flex items-center hover:underline">
-                                    Ver timeline completa <ArrowUpRight className="h-3 w-3 ml-1" />
-                                </button>
+                            <div className="mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                <Link href={`/dashboard/${projectId}/timeline`} passHref>
+                                    <Button variant="ghost" className="w-full justify-between text-slate-600 dark:text-slate-300 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 group">
+                                        Ver cronograma completo
+                                        <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                                    </Button>
+                                </Link>
                             </div>
                         </CardContent>
                     </Card>

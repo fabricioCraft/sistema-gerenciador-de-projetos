@@ -1,12 +1,13 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { updateTaskStatus } from '@/actions/tasks';
 import { deleteTask, updateTask } from '@/actions/task-details';
-import { CheckCircle2, Circle, Clock, MoreHorizontal, Pencil, Trash2, ArrowUp, Calendar, User, AlignLeft, Tag, Users } from 'lucide-react';
+import { updateTaskAndPropagate } from '@/actions';
+import { CheckCircle2, Circle, Clock, MoreHorizontal, Pencil, Trash2, ArrowUp, Calendar as CalendarIcon, User, AlignLeft, Tag, Users, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import {
@@ -24,10 +25,35 @@ import {
     SheetTitle,
     SheetTrigger,
 } from "@/components/ui/sheet";
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+    Command,
+    CommandEmpty,
+    CommandGroup,
+    CommandInput,
+    CommandItem,
+    CommandList,
+} from "@/components/ui/command";
+import { Calendar } from '@/components/ui/calendar';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+// Helper to format dates consistently, avoiding timezone shift issues
+// Uses UTC components to ensure the date displayed matches what's stored in Supabase
+const formatTaskDate = (dateInput: string | Date | null | undefined): string => {
+    if (!dateInput) return '...';
+    const date = new Date(dateInput);
+    // Use UTC date components to avoid timezone shift (Supabase stores in UTC)
+    // This ensures "2024-12-13T21:00:00Z" displays as "13 dez", not "14 dez"
+    return format(new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()), 'd MMM', { locale: ptBR });
+};
 
 
 type Task = {
@@ -35,16 +61,34 @@ type Task = {
     title: string;
     description: string | null;
     status: string | null;
-    isCritical?: boolean; // Propriedade injetada
+    isCritical?: boolean;
     startDate?: Date | null;
     endDate?: Date | null;
     duration?: number | null;
-    // ... outros campos se necessário
+    priority?: string | null;
+    assignedTo?: string | null;
 };
+
+// Mock team members for assignment
+const TEAM_MEMBERS = [
+    { id: '1', name: 'Ana Designer', initials: 'AD', color: 'bg-pink-500' },
+    { id: '2', name: 'João Dev', initials: 'JD', color: 'bg-blue-500' },
+    { id: '3', name: 'Maria PM', initials: 'MP', color: 'bg-green-500' },
+    { id: '4', name: 'Carlos QA', initials: 'CQ', color: 'bg-purple-500' },
+];
+
+// Priority labels with colors
+const PRIORITY_OPTIONS = [
+    { id: 'urgent', label: 'Urgente', color: 'bg-red-500', textColor: 'text-red-600' },
+    { id: 'high', label: 'Alto', color: 'bg-orange-500', textColor: 'text-orange-600' },
+    { id: 'medium', label: 'Médio', color: 'bg-blue-500', textColor: 'text-blue-600' },
+    { id: 'low', label: 'Baixo', color: 'bg-green-500', textColor: 'text-green-600' },
+];
 
 type TaskBoardProps = {
     tasks: Task[];
     projectId: string;
+    highlightedTaskId?: string | null;
 };
 
 const COLUMNS = [
@@ -53,11 +97,30 @@ const COLUMNS = [
     { id: 'done', label: 'Concluído', icon: CheckCircle2, color: 'text-green-500' },
 ];
 
-import { useRouter } from 'next/navigation';
 
-export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
+export function TaskBoard({ tasks: initialTasks, projectId, highlightedTaskId }: TaskBoardProps) {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [tasks, setTasks] = useState(initialTasks);
+    const [openTaskId, setOpenTaskId] = useState<string | null>(null);
+
+    // Sync state with props when server revalidates
+    useEffect(() => {
+        setTasks(initialTasks);
+    }, [initialTasks]);
+
+    // Auto-open highlighted task Sheet
+    useEffect(() => {
+        if (highlightedTaskId) {
+            setOpenTaskId(highlightedTaskId);
+            // Clean up URL after opening
+            const newUrl = window.location.pathname;
+            window.history.replaceState({}, '', newUrl);
+        }
+    }, [highlightedTaskId]);
+
+    // NOTE: Self-healing auto-scheduling removed for performance.
+    // Use the "Recalcular Cronograma" button in the Gantt view if dates are missing.
     // const [activeTask, setActiveTask] = useState<Task | null>(null); // Sheet controls itself via trigger? Or we need controlled state to update it.
 
     // To allow sheet state to be updatable, we might need to rely on the fact that 'tasks' state is updating.
@@ -130,10 +193,23 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
     };
 
     const getColumnTasks = (columnId: string) => {
-        return tasks.filter(task => {
-            const status = task.status || 'todo';
-            return status === columnId;
-        });
+        return tasks
+            .filter(task => {
+                const status = task.status || 'todo';
+                return status === columnId;
+            })
+            .sort((a, b) => {
+                // Se ambas têm data de início, ordena por data (mais recente primeiro? Não, mais antiga primeiro, cronológica)
+                if (a.startDate && b.startDate) {
+                    return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
+                }
+                // Se a tem data e b não, a vem primeiro
+                if (a.startDate && !b.startDate) return -1;
+                // Se b tem data e a não, b vem primeiro
+                if (!a.startDate && b.startDate) return 1;
+                // Se nenhuma tem data, mantém ordem original ou por nome
+                return 0;
+            });
     };
 
     return (
@@ -171,7 +247,10 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                     style={{ ...provided.draggableProps.style }}
                                                     className="outline-none"
                                                 >
-                                                    <Sheet>
+                                                    <Sheet
+                                                        open={openTaskId === task.id}
+                                                        onOpenChange={(open) => setOpenTaskId(open ? task.id : null)}
+                                                    >
                                                         <SheetTrigger asChild>
                                                             <div className={`
                                                                 group relative cursor-pointer
@@ -180,6 +259,7 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                                 hover:border-blue-400 dark:hover:border-blue-500
                                                                 transition-all duration-200 p-3
                                                                 ${snapshot.isDragging ? 'rotate-2 scale-105 shadow-xl ring-2 ring-primary ring-opacity-20 z-50' : ''}
+                                                                ${highlightedTaskId === task.id ? 'ring-2 ring-amber-400 dark:ring-amber-500 shadow-lg shadow-amber-100 dark:shadow-amber-900/20' : ''}
                                                             `}>
                                                                 {/* Edit Icon Overlay */}
                                                                 <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity z-10" onClick={(e) => e.stopPropagation()}>
@@ -210,7 +290,7 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                                 </div>
 
                                                                 {/* Tags Row */}
-                                                                <div className="flex flex-wrap items-center gap-2 mt-2 mb-1">
+                                                                <div className="flex flex-wrap items-center gap-1.5 mt-2 mb-1">
                                                                     {task.duration != null && (
                                                                         <Badge variant="secondary" className="h-5 px-1.5 text-[10px] font-medium bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300 border-blue-100 dark:border-blue-800">
                                                                             <Clock className="w-3 h-3 mr-1" />
@@ -221,6 +301,20 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                                     {task.isCritical && (
                                                                         <Badge variant="destructive" className="h-5 px-1.5 text-[10px] uppercase tracking-wider font-bold">
                                                                             Crítico
+                                                                        </Badge>
+                                                                    )}
+
+                                                                    {/* Priority Badge - Visible on Card */}
+                                                                    {task.priority && (
+                                                                        <Badge
+                                                                            variant="outline"
+                                                                            className={`h-5 px-1.5 text-[10px] font-medium border ${task.priority === 'urgent' ? 'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800' :
+                                                                                task.priority === 'high' ? 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-900/30 dark:text-orange-300 dark:border-orange-800' :
+                                                                                    task.priority === 'medium' ? 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800' :
+                                                                                        'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800'
+                                                                                }`}
+                                                                        >
+                                                                            {PRIORITY_OPTIONS.find(p => p.id === task.priority)?.label || task.priority}
                                                                         </Badge>
                                                                     )}
                                                                 </div>
@@ -235,15 +329,33 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                                     {(!task.description) && <div />}
 
                                                                     <div className="flex items-center gap-2 overflow-hidden justify-end w-full ml-2">
-                                                                        {(task.startDate || task.endDate) && (
-                                                                            <div className="flex items-center text-[10px] text-muted-foreground bg-gray-50 dark:bg-gray-800/50 hover:bg-gray-100 dark:hover:bg-gray-700 px-1.5 py-0.5 rounded transition-colors whitespace-nowrap overflow-hidden text-ellipsis max-w-[120px]">
-                                                                                <Calendar className="h-3 w-3 mr-1 shrink-0" />
-                                                                                {task.startDate ? format(new Date(task.startDate), 'd MMM', { locale: ptBR }) : '?'} - {task.endDate ? format(new Date(task.endDate), 'd MMM', { locale: ptBR }) : '?'}
+                                                                        {/* Improved Date Display */}
+                                                                        <div className="flex items-center text-[10px] text-muted-foreground bg-slate-100 dark:bg-slate-800 px-2 py-1 rounded-md transition-colors whitespace-nowrap">
+                                                                            <CalendarIcon className="h-3 w-3 mr-1.5 shrink-0 text-slate-500" />
+                                                                            {task.startDate && task.endDate ? (
+                                                                                <span className="font-medium text-slate-600 dark:text-slate-300">
+                                                                                    {formatTaskDate(task.startDate)} → {formatTaskDate(task.endDate)}
+                                                                                </span>
+                                                                            ) : (
+                                                                                <span className="text-slate-400 italic">Sem data</span>
+                                                                            )}
+                                                                        </div>
+
+                                                                        {/* Avatar - Shows assigned member or default */}
+                                                                        {task.assignedTo ? (
+                                                                            <div
+                                                                                className={`h-6 w-6 rounded-full ${TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.color || 'bg-indigo-500'} flex items-center justify-center ring-2 ring-white dark:ring-gray-900 shrink-0`}
+                                                                                title={TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.name || 'Membro'}
+                                                                            >
+                                                                                <span className="text-[10px] font-bold text-white">
+                                                                                    {TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.initials || '?'}
+                                                                                </span>
+                                                                            </div>
+                                                                        ) : (
+                                                                            <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center ring-2 ring-white dark:ring-gray-900 shrink-0">
+                                                                                <User className="h-3 w-3 text-slate-400 dark:text-slate-500" />
                                                                             </div>
                                                                         )}
-                                                                        <div className="h-6 w-6 rounded-full bg-indigo-100 dark:bg-indigo-900 flex items-center justify-center ring-2 ring-white dark:ring-gray-900 border border-transparent shrink-0">
-                                                                            <User className="h-3 w-3 text-indigo-600 dark:text-indigo-400" />
-                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             </div>
@@ -317,15 +429,173 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                                     <div className="space-y-2">
                                                                         <h4 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">Adicionar ao cartão</h4>
 
-                                                                        <Button variant="secondary" className="w-full justify-start h-8 text-sm font-normal bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
-                                                                            <Users className="h-3.5 w-3.5 mr-2" /> Membros
-                                                                        </Button>
-                                                                        <Button variant="secondary" className="w-full justify-start h-8 text-sm font-normal bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
-                                                                            <Tag className="h-3.5 w-3.5 mr-2" /> Etiquetas
-                                                                        </Button>
-                                                                        <Button variant="secondary" className="w-full justify-start h-8 text-sm font-normal bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
-                                                                            <Calendar className="h-3.5 w-3.5 mr-2" /> Datas
-                                                                        </Button>
+                                                                        {/* Members Button with Popover */}
+                                                                        <Popover>
+                                                                            <PopoverTrigger asChild>
+                                                                                <Button variant="secondary" className="w-full justify-start h-8 text-sm font-normal bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                                                                    <Users className="h-3.5 w-3.5 mr-2" />
+                                                                                    Membros
+                                                                                    {task.assignedTo && (
+                                                                                        <span className={`ml-auto w-5 h-5 rounded-full ${TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.color || 'bg-gray-400'} text-white text-[10px] font-bold flex items-center justify-center`}>
+                                                                                            {TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.initials || '?'}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </Button>
+                                                                            </PopoverTrigger>
+                                                                            <PopoverContent className="w-64 p-0" align="start">
+                                                                                <Command>
+                                                                                    <CommandInput placeholder="Buscar membro..." />
+                                                                                    <CommandList>
+                                                                                        <CommandEmpty>Nenhum membro encontrado.</CommandEmpty>
+                                                                                        <CommandGroup heading="Equipe">
+                                                                                            {TEAM_MEMBERS.map((member) => (
+                                                                                                <CommandItem
+                                                                                                    key={member.id}
+                                                                                                    onSelect={async () => {
+                                                                                                        await updateTask(task.id, { assignedTo: member.id } as any);
+                                                                                                        toast.success(`Tarefa atribuída a ${member.name}`);
+                                                                                                        router.refresh();
+                                                                                                    }}
+                                                                                                    className="cursor-pointer"
+                                                                                                >
+                                                                                                    <div className={`w-6 h-6 rounded-full ${member.color} text-white text-xs font-bold flex items-center justify-center mr-2`}>
+                                                                                                        {member.initials}
+                                                                                                    </div>
+                                                                                                    <span>{member.name}</span>
+                                                                                                    {task.assignedTo === member.id && (
+                                                                                                        <Check className="ml-auto h-4 w-4 text-green-500" />
+                                                                                                    )}
+                                                                                                </CommandItem>
+                                                                                            ))}
+                                                                                        </CommandGroup>
+                                                                                    </CommandList>
+                                                                                </Command>
+                                                                            </PopoverContent>
+                                                                        </Popover>
+
+                                                                        {/* Priority/Labels Button with Popover */}
+                                                                        <Popover>
+                                                                            <PopoverTrigger asChild>
+                                                                                <Button variant="secondary" className="w-full justify-start h-8 text-sm font-normal bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                                                                    <Tag className="h-3.5 w-3.5 mr-2" />
+                                                                                    Etiquetas
+                                                                                    {task.priority && (
+                                                                                        <span className={`ml-auto w-2 h-2 rounded-full ${PRIORITY_OPTIONS.find(p => p.id === task.priority)?.color || 'bg-gray-400'}`} />
+                                                                                    )}
+                                                                                </Button>
+                                                                            </PopoverTrigger>
+                                                                            <PopoverContent className="w-48 p-2" align="start">
+                                                                                <div className="space-y-1">
+                                                                                    <p className="text-xs font-semibold text-muted-foreground mb-2">Prioridade</p>
+                                                                                    {PRIORITY_OPTIONS.map((priority) => (
+                                                                                        <button
+                                                                                            key={priority.id}
+                                                                                            onClick={async () => {
+                                                                                                await updateTask(task.id, { priority: priority.id } as any);
+                                                                                                toast.success(`Prioridade definida: ${priority.label}`);
+                                                                                                router.refresh();
+                                                                                            }}
+                                                                                            className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-sm hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors ${task.priority === priority.id ? 'bg-gray-100 dark:bg-gray-800' : ''}`}
+                                                                                        >
+                                                                                            <span className={`w-3 h-3 rounded-full ${priority.color}`} />
+                                                                                            <span className={priority.textColor}>{priority.label}</span>
+                                                                                            {task.priority === priority.id && (
+                                                                                                <Check className="ml-auto h-3.5 w-3.5 text-green-500" />
+                                                                                            )}
+                                                                                        </button>
+                                                                                    ))}
+                                                                                </div>
+                                                                            </PopoverContent>
+                                                                        </Popover>
+
+                                                                        {/* Dates Button with Calendar Popover - Start and End Date */}
+                                                                        <Popover>
+                                                                            <PopoverTrigger asChild>
+                                                                                <Button variant="secondary" className="w-full justify-start h-8 text-sm font-normal bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700">
+                                                                                    <CalendarIcon className="h-3.5 w-3.5 mr-2" />
+                                                                                    Datas
+                                                                                    {(task.startDate || task.endDate) && (
+                                                                                        <span className="ml-auto text-xs text-muted-foreground">
+                                                                                            {formatTaskDate(task.startDate)} - {formatTaskDate(task.endDate)}
+                                                                                        </span>
+                                                                                    )}
+                                                                                </Button>
+                                                                            </PopoverTrigger>
+                                                                            <PopoverContent className="w-auto p-0" align="start">
+                                                                                <div className="p-3 border-b">
+                                                                                    <p className="text-sm font-semibold">Alterar Datas da Tarefa</p>
+                                                                                    <p className="text-xs text-muted-foreground">Dependências serão recalculadas automaticamente</p>
+                                                                                </div>
+                                                                                <div className="p-4 space-y-4">
+                                                                                    {/* Start Date */}
+                                                                                    <div>
+                                                                                        <label className="text-xs font-medium text-muted-foreground block mb-2">Data de Início</label>
+                                                                                        <Calendar
+                                                                                            mode="single"
+                                                                                            selected={task.startDate ? new Date(task.startDate) : undefined}
+                                                                                            onSelect={async (date) => {
+                                                                                                if (date) {
+                                                                                                    const loadingId = toast.loading("Calculando dependências...");
+                                                                                                    const endDate = task.endDate ? new Date(task.endDate) : new Date(date.getTime() + (task.duration || 1) * 60 * 60 * 1000);
+                                                                                                    // Ensure end date is not before start date
+                                                                                                    const adjustedEndDate = endDate < date ? new Date(date.getTime() + 24 * 60 * 60 * 1000) : endDate;
+                                                                                                    try {
+                                                                                                        const result = await updateTaskAndPropagate(task.id, date, adjustedEndDate);
+                                                                                                        if (result.success) {
+                                                                                                            toast.dismiss(loadingId);
+                                                                                                            toast.success('Data de início atualizada.', { description: 'Impactos calculados.' });
+                                                                                                        } else {
+                                                                                                            toast.dismiss(loadingId);
+                                                                                                            toast.error('Erro ao atualizar data de início');
+                                                                                                        }
+                                                                                                        router.refresh();
+                                                                                                    } catch (error) {
+                                                                                                        toast.dismiss(loadingId);
+                                                                                                        toast.error('Erro crítico ao atualizar cronograma');
+                                                                                                    }
+                                                                                                }
+                                                                                            }}
+                                                                                            locale={ptBR}
+                                                                                            className="rounded-md border"
+                                                                                        />
+                                                                                    </div>
+
+                                                                                    {/* End Date */}
+                                                                                    <div>
+                                                                                        <label className="text-xs font-medium text-muted-foreground block mb-2">Data de Término</label>
+                                                                                        <Calendar
+                                                                                            mode="single"
+                                                                                            selected={task.endDate ? new Date(task.endDate) : undefined}
+                                                                                            onSelect={async (date) => {
+                                                                                                if (date) {
+                                                                                                    const loadingId = toast.loading("Ajustando prazos...");
+                                                                                                    const startDate = task.startDate ? new Date(task.startDate) : new Date();
+                                                                                                    // Ensure start date is not after end date
+                                                                                                    const adjustedStartDate = startDate > date ? new Date(date.getTime() - 24 * 60 * 60 * 1000) : startDate;
+                                                                                                    try {
+                                                                                                        const result = await updateTaskAndPropagate(task.id, adjustedStartDate, date);
+                                                                                                        if (result.success) {
+                                                                                                            toast.dismiss(loadingId);
+                                                                                                            toast.success('Data de término atualizada.', { description: 'Cronograma realinhado.' });
+                                                                                                        } else {
+                                                                                                            toast.dismiss(loadingId);
+                                                                                                            toast.error('Erro ao atualizar data de término');
+                                                                                                        }
+                                                                                                        router.refresh();
+                                                                                                    } catch (error) {
+                                                                                                        toast.dismiss(loadingId);
+                                                                                                        toast.error('Erro crítico ao atualizar cronograma');
+                                                                                                    }
+                                                                                                }
+                                                                                            }}
+                                                                                            locale={ptBR}
+                                                                                            className="rounded-md border"
+                                                                                            disabled={(date) => task.startDate ? date < new Date(task.startDate) : false}
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
+                                                                            </PopoverContent>
+                                                                        </Popover>
                                                                     </div>
 
                                                                     {/* Actions Section */}
@@ -347,7 +617,7 @@ export function TaskBoard({ tasks: initialTasks, projectId }: TaskBoardProps) {
                                                                         <div className="pt-4 border-t">
                                                                             <div className="text-xs text-muted-foreground mb-1">Datas</div>
                                                                             <div className="text-sm">
-                                                                                {task.startDate ? format(new Date(task.startDate), 'd MMM', { locale: ptBR }) : '...'} - {task.endDate ? format(new Date(task.endDate), 'd MMM', { locale: ptBR }) : '...'}
+                                                                                {formatTaskDate(task.startDate)} - {formatTaskDate(task.endDate)}
                                                                             </div>
                                                                         </div>
                                                                     )}

@@ -26,22 +26,33 @@ export async function createProject(name: string, description: string, userId: s
 }
 
 export async function getProject(id: string) {
+    console.log(`[getProject] Attempting to fetch project: "${id}"`);
+
+    // Validate UUID format
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(id)) {
+        console.error(`[getProject] Invalid ID format: "${id}" is not a valid UUID`);
+        return { success: false, error: `Invalid project ID format` };
+    }
+
     try {
-        const project = await db.query.projects.findFirst({
-            where: eq(projects.id, id),
-        });
+        console.log(`[getProject] Querying database for project ID: ${id}`);
+
+        // Using db.select() instead of db.query to ensure compatibility
+        const [project] = await db.select().from(projects).where(eq(projects.id, id));
+
+        console.log(`[getProject] Query result:`, project ? `Found project "${project.name}"` : 'NOT FOUND');
 
         if (!project) return { success: false, error: 'Project not found' };
 
         // Fetch tasks as well
-        const projectTasks = await db.query.tasks.findMany({
-            where: eq(tasks.projectId, id),
-            orderBy: (tasks, { asc }) => [asc(tasks.createdAt)],
-        });
+        const projectTasks = await db.select().from(tasks).where(eq(tasks.projectId, id));
+
+        console.log(`[getProject] Found ${projectTasks.length} tasks for project`);
 
         return { success: true, data: { ...project, tasks: projectTasks } };
     } catch (error) {
-        console.error('Failed to fetch project:', error);
+        console.error('[getProject] Failed to fetch project:', error);
         return { success: false, error: 'Failed to fetch project' };
     }
 }

@@ -1,65 +1,57 @@
 'use client';
 
 import { useChat } from '@ai-sdk/react';
+import { TextStreamChatTransport } from 'ai';
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { MessageSquare, Send, Bot } from 'lucide-react';
 import { Input } from '@/components/ui/input';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useMemo } from 'react';
 
 export function ProjectChatAssistant({ projectId }: { projectId: string }) {
-    const chat = useChat({
+    const [inputValue, setInputValue] = useState('');
+
+    // Cria transport que usa Text Stream (compatível com toTextStreamResponse())
+    const transport = useMemo(() => new TextStreamChatTransport({
         api: '/api/chat',
-        streamProtocol: 'text', // Re-enabled to match backend toTextStreamResponse
-        body: { projectId: projectId || 'unknown-project' }, // Passa o ID real do projeto
-        onResponse: (response: any) => {
-            console.log("📡 useChat onResponse status:", response.status);
-        },
-        onError: (err: any) => {
+        body: { projectId }
+    }), [projectId]);
+
+    // useChat v5 - usa 'id' e 'sendMessage'
+    const chatHelpers = useChat({
+        id: `project-${projectId}`,
+        transport,
+        onError: (err) => {
             console.error("❌ Erro no useChat:", err);
-            alert("Erro no Chat: " + err.message);
         },
-        onFinish: (message: any) => {
+        onFinish: (message) => {
             console.log("✅ Stream finalizado. Última mensagem:", message);
         },
-    } as any) as any;
+    });
 
-    const { messages, status, sendMessage: chatSendMessage, error } = chat as any;
+    const { messages, status, sendMessage, error } = chatHelpers;
     const isLoading = status === 'streaming' || status === 'submitted';
-    
-    // Prioritize chatSendMessage if available, otherwise check for append (though logs say it's not there)
-    const sendMessage = typeof chatSendMessage === 'function' 
-        ? chatSendMessage 
-        : (typeof (chat as any).append === 'function' ? (chat as any).append : async () => {
-             console.error("No send function found. Keys:", Object.keys(chat));
-             alert("Erro crítico: Função de envio não encontrada.");
-        });
 
     // Expose chat to window for debugging
     useEffect(() => {
-        (window as any)._chatDebug = chat;
-        console.log("Chat Hook Initialized. Keys available:", Object.keys(chat));
-    }, [chat]);
+        (window as any)._chatDebug = chatHelpers;
+        console.log("Chat Hook Initialized. Keys:", Object.keys(chatHelpers));
+    }, [chatHelpers]);
 
-    const [inputValue, setInputValue] = useState('');
-
-    // console.log("Chat object keys:", Object.keys(chat || {}));
     console.log("Mensagens atuais:", messages);
 
     const handleSendMessage = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (!inputValue?.trim()) return;
 
-        const message = { role: 'user', content: inputValue };
-        
-        // Clear input immediately for better UX
-        setInputValue('');
-        
+        const messageContent = inputValue;
+        setInputValue(''); // Clear input immediately
+
         try {
-            await sendMessage(message);
+            // sendMessage v5 usa { text: string }
+            await sendMessage({ text: messageContent });
         } catch (err) {
             console.error("Error sending message:", err);
-            // Optionally restore input or show error
         }
     };
 
@@ -70,6 +62,17 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
             scrollRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [messages]);
+
+    // Helper para extrair texto de uma mensagem (v5 usa parts)
+    const getMessageText = (m: typeof messages[0]): string => {
+        if (m.parts) {
+            return m.parts
+                .filter((p): p is { type: 'text'; text: string } => p.type === 'text')
+                .map(p => p.text)
+                .join('');
+        }
+        return '';
+    };
 
     return (
         <Sheet>
@@ -82,57 +85,67 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                 </Button>
             </SheetTrigger>
             <SheetContent className="w-[400px] sm:w-[540px] flex flex-col p-0 h-full" side="right">
-                <SheetHeader className="p-4 border-b bg-slate-50 dark:bg-slate-900">
-                    <SheetTitle className="flex items-center gap-2">
-                        <Bot className="w-5 h-5 text-blue-600" />
-                        Assistente de Projeto
+                <SheetHeader className="p-4 border-b bg-indigo-50/50 dark:bg-slate-900/50">
+                    <SheetTitle className="flex items-center gap-2 text-indigo-700 dark:text-indigo-400">
+                        <Bot className="w-5 h-5" />
+                        Falar com Kira
                     </SheetTitle>
                     <SheetDescription>
-                        Gerente virtual conectado ao cronograma.
+                        Head de Projetos Inteligente.
                     </SheetDescription>
                 </SheetHeader>
 
                 <div className="bg-yellow-100 p-2 text-xs text-black border-b border-yellow-300">
                     <p>Status Debug:</p>
                     <p>Qtd Mensagens: {messages.length}</p>
+                    <p>isLoading: {isLoading ? 'Sim' : 'Não'}</p>
                     <p>Erro atual: {error ? error.message : 'Nenhum'}</p>
-                    {/* Mostra o JSON bruto para vermos se chega algo */}
                     <pre className="max-h-20 overflow-auto">{JSON.stringify(messages, null, 2)}</pre>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
                     {messages.length === 0 && (
-                        <div className="text-center text-slate-500 mt-10">
-                            <div className="bg-slate-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <Bot className="w-8 h-8 text-blue-600" />
+                        <div className="text-center text-slate-500 mt-10 p-6">
+                            <div className="bg-indigo-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-sm">
+                                <Bot className="w-10 h-10 text-indigo-600" />
                             </div>
-                            <p className="font-medium">Olá! Eu conheço todas as tarefas.</p>
-                            <p className="text-sm mt-2">Pergunte: "Qual a próxima entrega?" ou "O que está atrasado?"</p>
+                            <h3 className="font-bold text-lg text-slate-900 dark:text-slate-100 mb-2">👋 Sou a Kira.</h3>
+                            <p className="text-sm leading-relaxed max-w-[280px] mx-auto">
+                                Estou monitorando seu cronograma em tempo real.
+                                <br /><br />
+                                <span className="font-medium text-indigo-600 dark:text-indigo-400">Experimente perguntar:</span>
+                                <br /> "O que está atrasado?"
+                                <br /> "Qual o foco da semana?"
+                            </p>
                         </div>
                     )}
-                    {messages.map((m: any, index: number) => (
-                                <div key={m.id || index} className={`flex gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                                    {m.role !== 'user' && (
-                                        <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                            <Bot className="w-4 h-4 text-slate-600" />
-                                        </div>
-                                    )}
-                                    <div className={`rounded-lg p-3 max-w-[80%] text-sm shadow-sm ${m.role === 'user'
-                                        ? 'bg-blue-600 text-white'
-                                        : 'bg-slate-100 text-slate-900 border border-slate-200'
-                                        }`}>
-                                        <p>{m.content}</p>
-                                        <p className="text-[10px] text-gray-400 mt-1">{JSON.stringify(m)}</p>
+                    {messages.map((m, index) => (
+                        <div key={m.id || index} className={`flex flex-col gap-1 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
+                            <span className="text-[10px] text-slate-400 px-1">
+                                {m.role === 'user' ? 'Você' : 'Kira'}
+                            </span>
+                            <div className={`flex gap-3 max-w-[85%] ${m.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                                {m.role !== 'user' && (
+                                    <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border border-indigo-200">
+                                        <Bot className="w-4 h-4 text-indigo-600" />
                                     </div>
+                                )}
+                                <div className={`rounded-2xl p-3 text-sm shadow-sm ${m.role === 'user'
+                                    ? 'bg-blue-600 text-white rounded-br-none'
+                                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-200 border border-slate-100 dark:border-slate-800 rounded-bl-none'
+                                    }`}>
+                                    <p className="leading-relaxed">{getMessageText(m)}</p>
                                 </div>
-                            ))}
-                    {isLoading && (
-                        <div className="flex gap-3 justify-start">
-                            <div className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center shrink-0">
-                                <Bot className="w-4 h-4 text-slate-600" />
                             </div>
-                            <div className="rounded-lg p-3 bg-slate-50 border border-slate-100 text-sm text-slate-500 animate-pulse">
-                                Analisando...
+                        </div>
+                    ))}
+                    {isLoading && (
+                        <div className="flex gap-3 justify-start items-center ml-1">
+                            <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0 border border-indigo-200">
+                                <Bot className="w-4 h-4 text-indigo-600" />
+                            </div>
+                            <div className="px-3 py-2 rounded-full bg-slate-50 border border-slate-100 text-xs text-slate-500 animate-pulse italic">
+                                Kira está digitando...
                             </div>
                         </div>
                     )}
@@ -147,7 +160,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                             placeholder="Digite sua mensagem..."
                             className="flex-1"
                         />
-                        <Button type="submit" size="icon" disabled={isLoading} className="bg-blue-600 hover:bg-blue-700">
+                        <Button type="submit" size="icon" disabled={isLoading || !inputValue?.trim()} className="bg-blue-600 hover:bg-blue-700">
                             <Send className="w-4 h-4" />
                         </Button>
                     </form>

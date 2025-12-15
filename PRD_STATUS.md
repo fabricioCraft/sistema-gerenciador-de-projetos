@@ -19,6 +19,8 @@ Sistema de gerenciamento de projetos focado em visualização avançada (Gantt, 
 - [x] **Banco de Dados**: Schema Drizzle definindo `projects` e `tasks`.
 - [x] **Conexão DB**: Configuração do `postgres-js` para suportar Transaction Pooler do Supabase.
 - [x] **Server Actions**: CRUD básico (`createProject`, `getProject`, `createTask`).
+- [x] **Internacionalização**: Tradução completa da interface e feedback para Português (PT-BR).
+- [x] **Developer Experience**: Configuração do `nodemon` para restart automático.
 
 ### 3.2. Dashboard & Visualização
 - [x] **Layout Principal**: Sidebar de navegação, Cabeçalho dinâmico.
@@ -33,8 +35,9 @@ Sistema de gerenciamento de projetos focado em visualização avançada (Gantt, 
 
 ### 3.3. Motor de Agendamento (Scheduler Engine)
 - [x] **Cálculo de Cronograma (CPM/PERT)**:
-    - [x] Cálculo de *Early Start*, *Early Finish*, *Late Start*, *Late Finish*.
-    - [x] Cálculo de Folga (*Slack*) e identificação do Caminho Crítico.
+    - [x] Cálculo de *Early Start*, *Early Finish*.
+    - [x] **Topological Sort**: Resolução robusta de dependências para evitar ciclos e datas inconsistentes.
+    - [x] Cálculo de Folga (*Slack*) e identificação do Caminho Crítico (Frontend/Lib).
 - [x] **Dependency Cascading (Motor de Reagendamento)**:
     - [x] Detecção de alteração de datas (Drag & Drop no Gantt).
     - [x] Propagação recursiva de atrasos para tarefas dependentes (`propagateChange`).
@@ -56,7 +59,7 @@ Sistema de gerenciamento de projetos focado em visualização avançada (Gantt, 
 ## 4. Próximos Passos (Backlog Sugerido)
 
 ### 4.1. Melhorias de UX/UI
-- [ ] **Feedback Visual de Salvamento**: Adicionar toasts/notificações mais robustas (Sonner/Hot-toast) para todas as ações.
+- [ ] **Feedback Visual de Salvamento**: Substituir `alert` por toasts (Sonner/Hot-toast).
 - [ ] **Edição Rápida**: Permitir editar nome/duração da tarefa clicando nela no Gantt.
 - [ ] **Filtros Avançados**: Filtrar Gantt por responsável ou status.
 
@@ -76,4 +79,4 @@ Sistema de gerenciamento de projetos focado em visualização avançada (Gantt, 
 - **Schema DB**: `src/db/schema.ts`
 - **Lógica de Negócio**: `src/actions/index.ts` (Centraliza lógica de backend para facilitar uso via Server Components e AI).
 
-**Última Atualização**: 09/12/2025
+**Última Atualização**: 14/12/2025
