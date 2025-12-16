@@ -5,6 +5,7 @@ import { projects, tasks } from '@/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { addDays, differenceInCalendarDays, startOfDay } from 'date-fns';
+import { skipWeekend, calculateEndDate } from '@/lib/date-utils';
 
 // --- Projects ---
 
@@ -127,17 +128,25 @@ async function propagateChange(parentId: string, deltaMs: number, tx: any) {
         if (!child.startDate || !child.endDate) continue;
 
         const childStart = new Date(child.startDate);
-        const childEnd = new Date(child.endDate);
 
-        // Apply same delta
-        const updatedStart = new Date(childStart.getTime() + deltaMs);
-        const updatedEnd = new Date(childEnd.getTime() + deltaMs);
+        // 1. Calculate original duration in hours (fallback to 24 if missing, or derive from dates)
+        // Note: db schema has 'duration' field (int hours). Use it if available.
+        // If not checking schema properties here, assume 'duration' exists or calc:
+        const originalDuration = child.duration ||
+            (new Date(child.endDate).getTime() - new Date(child.startDate).getTime()) / (1000 * 60 * 60);
+
+        // 2. Apply delta but SKIP WEEKEND
+        let newChildStart = new Date(childStart.getTime() + deltaMs);
+        newChildStart = skipWeekend(newChildStart);
+
+        // 3. Recalculate end date based on duration (Business Logic)
+        const newChildEnd = calculateEndDate(newChildStart, originalDuration);
 
         await tx.update(tasks)
-            .set({ startDate: updatedStart, endDate: updatedEnd })
+            .set({ startDate: newChildStart, endDate: newChildEnd })
             .where(eq(tasks.id, child.id));
 
-        console.log(`Cascading: Task ${child.title} moved by ${deltaMs / (1000 * 60 * 60 * 24)} days.`);
+        console.log(`Cascading: Task ${child.title} moved to Start: ${newChildStart} End: ${newChildEnd}`);
 
         // Recurse
         await propagateChange(child.id, deltaMs, tx);

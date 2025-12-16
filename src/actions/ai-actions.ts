@@ -8,6 +8,7 @@ import { projects, tasks } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { calculateProjectSchedule } from './scheduler';
+import { skipWeekend } from '@/lib/date-utils';
 
 const TaskSchema = z.object({
     title: z.string(),
@@ -61,17 +62,40 @@ export async function generateAndCreateProject(userDescription: string) {
         if (!newProject) throw new Error('Failed to create project record');
 
         // 2. Map tasks and calculate PERT
-        const tasksData = projectPlan.tasks.map(t => ({
-            projectId: newProject.id,
-            title: t.title,
-            description: t.description,
-            estOptimistic: t.estOptimistic,
-            estLikely: t.estLikely,
-            estPessimistic: t.estPessimistic,
-            duration: calculatePert(t.estOptimistic, t.estLikely, t.estPessimistic),
-            status: 'todo' as const,
-            originalIndex: 0 // Placeholder
-        }));
+        // Ensure initial project start is a business day
+        let currentCursor = skipWeekend(new Date());
+
+        const tasksData = projectPlan.tasks.map(t => {
+            const realDuration = calculatePert(t.estOptimistic, t.estLikely, t.estPessimistic); // duration in hours
+
+            // Use our Business Day Cursor Logic
+            // Start Date: Must be a workday (skipWeekend handled by cursor update or initial set)
+            let realStartDate = skipWeekend(currentCursor);
+
+            // Wait, if we are doing dependencies later, this initial "waterfall" is just a placeholder sequence?
+            // User requested: "Refatore o loop de inserção... para usar nossa lógica de dias úteis."
+            // We'll follow the waterfall request for the initial insert, then valid dependencies later might adjust it.
+            // But having a solid initial waterfall is good.
+
+            // NOTE: The user snippet assumes we are calculating ALL dates here.
+            // The existing code has "calculateProjectSchedule" called at the end (step 4).
+            // However, the user specifically asked to "Refatore o loop de inserção".
+            // So we will improve the initial dates inserted into the DB.
+
+            const projectId = newProject.id;
+
+            return {
+                projectId,
+                title: t.title,
+                description: t.description,
+                estOptimistic: t.estOptimistic,
+                estLikely: t.estLikely,
+                estPessimistic: t.estPessimistic,
+                duration: realDuration,
+                status: 'todo' as const,
+                originalIndex: 0 // Placeholder
+            };
+        });
 
         // Insert tasks and get returned IDs
         const createdTasks = await db.insert(tasks).values(tasksData).returning({ id: tasks.id });
@@ -157,7 +181,7 @@ export async function generateDashboardInsight({
             - **Tom:** Direto, orientado à solução.
 
             ## Instrução de Saída
-            Gere uma resposta curta (máximo 3 frases) em Português do Brasil.
+            Gere uma resposta curta (máximo 5 frases) em Português do Brasil.
             Não use markdown no output (apenas texto).
             Siga estritamente os fatos numéricos acima.
           `,

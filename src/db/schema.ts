@@ -36,3 +36,20 @@ export const tasks = pgTable("tasks", {
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
 
+export const chatSessions = pgTable("chat_sessions", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id").references(() => projects.id, { onDelete: 'cascade' }),
+    userId: uuid("user_id"), // Implicitly references auth.users(id)
+    title: text("title"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+});
+
+export const chatMessages = pgTable("chat_messages", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sessionId: uuid("session_id").references(() => chatSessions.id, { onDelete: 'cascade' }),
+    role: text("role").notNull(), // 'user' | 'assistant'
+    content: text("content").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+

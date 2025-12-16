@@ -5,6 +5,7 @@ import { tasks, projects } from '@/db/schema';
 import { eq, inArray } from 'drizzle-orm';
 import { addHours, max, isBefore, isValid } from 'date-fns';
 import { revalidatePath } from 'next/cache';
+import { skipWeekend, calculateEndDate } from '@/lib/date-utils';
 
 /**
  * Calculates and updates existing task schedules based on their duration and dependencies.
@@ -147,10 +148,14 @@ export async function calculateProjectSchedule(projectId: string) {
                 finalStartDate = constraintStartDate;
             }
 
+            // CRITICAL: Ensure the start date is a valid Business Day
+            finalStartDate = skipWeekend(finalStartDate);
+
             // Step C: Calculate End Date
             // Duration is in hours.
             const durationHours = currentTask.duration || 1;
-            const finalEndDate = addHours(finalStartDate, durationHours);
+            // Use Business Logic: calculateEndDate handles skipping weekends for the duration
+            const finalEndDate = calculateEndDate(finalStartDate, durationHours);
 
             // Store result in map for dependents
             calculatedDates.set(currentTaskId, { start: finalStartDate, end: finalEndDate });
