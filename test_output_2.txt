@@ -1,0 +1,24 @@
+
+Running 1 test using 1 worker
+
+  ✘  1 e2e\chat.spec.ts:4:5 › chat flow (3.9s)
+
+
+  1) e2e\chat.spec.ts:4:5 › chat flow ──────────────────────────────────────────────────────────────
+
+    Error: page.goto: net::ERR_CONNECTION_REFUSED at http://localhost:3000/dashboard/0064386b-25b9-431d-91dd-24dcc3df6e8c
+    Call log:
+    [2m  - navigating to "http://localhost:3000/dashboard/0064386b-25b9-431d-91dd-24dcc3df6e8c", waiting until "load"[22m
+
+
+      15 |   
+      16 |   const projectId = '0064386b-25b9-431d-91dd-24dcc3df6e8c';
+    > 17 |   await page.goto(`http://localhost:3000/dashboard/${projectId}`);
+         |              ^
+      18 |   
+      19 |   // Check if we were redirected to home (meaning project not found)
+      20 |   if (page.url() === 'http://localhost:3000/') {
+        at C:\repositories\sistema-gerenciador-de-projetos\e2e\chat.spec.ts:17:14
+
+  1 failed
+    e2e\chat.spec.ts:4:5 › chat flow ───────────────────────────────────────────────────────────────

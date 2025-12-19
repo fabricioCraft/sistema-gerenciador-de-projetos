@@ -1,0 +1,72 @@
+
+Running 1 test using 1 worker
+
+BROWSER LOG: %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+BROWSER LOG: %c%s%c [getProject] Attempting to fetch project: "0064386b-25b9-431d-91dd-24dcc3df6e8c" background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Querying database for project ID: 0064386b-25b9-431d-91dd-24dcc3df6e8c background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Attempting to fetch project: "0064386b-25b9-431d-91dd-24dcc3df6e8c" background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Querying database for project ID: 0064386b-25b9-431d-91dd-24dcc3df6e8c background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Query result: background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   Found project "Landing Page de Vendas Digitais — Projeto LP Conversão"
+BROWSER LOG: %c%s%c [getProject] Query result: background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   Found project "Landing Page de Vendas Digitais — Projeto LP Conversão"
+BROWSER LOG: %c%s%c [getProject] Found 29 tasks for project background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Found 29 tasks for project background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: [HMR] connected
+BROWSER LOG: [Fast Refresh] rebuilding
+Navigated to existing project dashboard
+BROWSER LOG: [Fast Refresh] done in 892ms
+BROWSER LOG: The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+BROWSER LOG: The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+BROWSER LOG: 🔄 STATE UPDATE: Messages mudou: []
+BROWSER LOG: ⏳ STATUS: isLoading: undefined
+BROWSER LOG: [Fast Refresh] rebuilding
+BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+BROWSER LOG: Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+BROWSER LOG: [Fast Refresh] done in 600ms
+BROWSER LOG: ⚠️ Sessão nula. Criando nova...
+BROWSER LOG: [Fast Refresh] rebuilding
+BROWSER LOG: [Fast Refresh] done in 380ms
+BROWSER LOG: [Fast Refresh] rebuilding
+BROWSER LOG: [Fast Refresh] done in 263ms
+BROWSER LOG: %c%s%c [getProject] Attempting to fetch project: "0064386b-25b9-431d-91dd-24dcc3df6e8c" background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Querying database for project ID: 0064386b-25b9-431d-91dd-24dcc3df6e8c background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Attempting to fetch project: "0064386b-25b9-431d-91dd-24dcc3df6e8c" background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: %c%s%c [getProject] Querying database for project ID: 0064386b-25b9-431d-91dd-24dcc3df6e8c background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: 🚀 Enviando mensagem: Qual o próximo passo? SessionID: a508b003-d490-495e-8b18-9b5b714f2515
+BROWSER LOG: 🔄 STATE UPDATE: Messages mudou: [Object]
+BROWSER LOG: %c%s%c [getProject] Query result: background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   Found project "Landing Page de Vendas Digitais — Projeto LP Conversão"
+BROWSER LOG: %c%s%c [getProject] Query result: background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server   Found project "Landing Page de Vendas Digitais — Projeto LP Conversão"
+BROWSER LOG: %c%s%c [getProject] Found 29 tasks for project background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: [Fast Refresh] rebuilding
+BROWSER LOG: %c%s%c [getProject] Found 29 tasks for project background: #e6e6e6;background: light-dark(rgba(0,0,0,0.1), rgba(255,255,255,0.25));color: #000000;color: light-dark(#000000, #ffffff);border-radius: 2px  Server  
+BROWSER LOG: [Fast Refresh] done in 29081ms
+  ✘  1 e2e\chat.spec.ts:4:5 › chat flow (54.6s)
+
+
+  1) e2e\chat.spec.ts:4:5 › chat flow ──────────────────────────────────────────────────────────────
+
+    Error: [2mexpect([22m[31mreceived[39m[2m).[22mtoBeGreaterThan[2m([22m[32mexpected[39m[2m)[22m
+
+    Expected: > [32m0[39m
+    Received:   [31m0[39m
+
+    Call Log:
+    - Timeout 30000ms exceeded while waiting on the predicate
+
+      57 |     expect(text?.trim().length).toBeGreaterThan(0);
+      58 |     console.log('Assistant bubble text:', text);
+    > 59 |   }).toPass({ timeout: 30000 });
+         |      ^
+      60 | });
+      61 |
+        at C:\repositories\sistema-gerenciador-de-projetos\e2e\chat.spec.ts:59:6
+
+    Error Context: test-results\e2e-chat-chat-flow\error-context.md
+
+  1 failed
+    e2e\chat.spec.ts:4:5 › chat flow ───────────────────────────────────────────────────────────────

@@ -5,18 +5,48 @@ import { useChat } from '@ai-sdk/react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetTrigger, SheetContent, SheetTitle } from '@/components/ui/sheet';
-import { createChatSession, getChatSessions, deleteChatSession } from '@/actions/chat-actions';
-import { Bot, Send, Plus, MessageSquare, User, Sparkles, Trash2 } from 'lucide-react';
+import { createChatSession, getChatSessions, deleteChatSession, updateChatSessionTitle, getChatMessages } from '@/actions/chat-actions';
+import { Bot, Send, Plus, MessageSquare, User, Sparkles, Trash2, Edit2, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 
 export function ProjectChatAssistant({ projectId }: { projectId: string }) {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
     const [history, setHistory] = useState<any[]>([]);
+    const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
+    const [editingTitle, setEditingTitle] = useState('');
+    const sessionIdRef = useRef<string | null>(null); // Ref sync for immediate access
+    const [isGenerating, setIsGenerating] = useState(false);
+
 
     // Hook do Vercel AI SDK
-    const chatHelpers = useChat() as any;
+    const chatHelpers = useChat({
+        streamProtocol: 'text',
+        onResponse: (response: Response) => {
+            const serverSessionId = response.headers.get('X-Chat-Session-Id');
+            if (serverSessionId && serverSessionId !== currentSessionId) {
+                setCurrentSessionId(serverSessionId);
+                // Refresh history list in sidebar
+                setTimeout(() => fetchHistory(), 1000);
+            }
+        },
+        onFinish: () => {
+            console.log("✅ Stream visual concluído.");
+        },
+        onError: (err: any) => {
+            console.error("Chat Error:", err);
+        }
+    } as any) as any;
 
     const { messages, setMessages, append, sendMessage, isLoading } = chatHelpers;
+
+    // debug logs
+    useEffect(() => {
+        console.log("🔄 STATE UPDATE: Messages mudou:", messages);
+    }, [messages]);
+
+    useEffect(() => {
+        console.log("⏳ STATUS: isLoading:", isLoading);
+    }, [isLoading]);
 
     const [localInput, setLocalInput] = useState('');
 
@@ -41,71 +71,109 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
         }
     };
 
-    // Função auxiliar para garantir sessão
-    const ensureSession = async () => {
-        if (currentSessionId) return currentSessionId;
-        try {
+    // REMOVED: ensureSession manual creation. We let the backend create it on first message.
+
+    // Helper para garantir sessão
+    const ensureSession = async (): Promise<string | null> => {
+        let activeId = currentSessionId;
+        if (!activeId) {
+            console.log("⚠️ Sessão nula. Criando nova...");
             const newSession = await createChatSession(projectId);
             if (newSession.success && newSession.session) {
-                setCurrentSessionId(newSession.session.id);
-                fetchHistory(); // Atualiza a sidebar
-                return newSession.session.id;
+                activeId = newSession.session.id;
+                setCurrentSessionId(activeId);
+                sessionIdRef.current = activeId;
+                fetchHistory();
             }
-            return null;
-        } catch (e) {
-            console.error(e);
-            return null;
         }
-    };
+        return activeId;
+    }
 
-    // Envio de Mensagem
+    // Envio de Mensagem Síncrono
     const handleSendMessage = async (e?: React.FormEvent) => {
         e?.preventDefault();
-        if (!localInput?.trim() || isLoading) return;
+        if (!localInput?.trim() || isGenerating) return;
 
-        const text = localInput;
-        setLocalInput('');
+        const userText = localInput;
+        setLocalInput(''); // Limpa input
+        setIsGenerating(true); // Ativa loader UI
 
-        const sessionId = await ensureSession();
-        if (!sessionId) return;
+        // 1. Otimistic Update (Mostra msg do usuário na hora)
+        // Precisamos converter para o formato que o UI espera (pode ser Message do Vercel SDK)
+        const tempUserMsg = {
+            id: Date.now().toString(),
+            role: 'user',
+            content: userText
+        };
 
-        const sendFn = append || sendMessage;
-
-        if (typeof sendFn !== 'function') {
-            console.error("Critical Error: No send function found.", chatHelpers);
-            alert("Erro crítico: O módulo de chat não inicializou corretamente. Verifique o console.");
-            return;
-        }
+        // setMessages vem do useChat, aceita array.
+        setMessages(prev => [...prev, tempUserMsg] as any);
 
         try {
-            await sendFn({ role: 'user', content: text }, {
-                body: { projectId, sessionId }
-            });
-        } catch (err) {
-            console.error("Error sending message:", err);
-            // Fallback
-            if (!append && sendMessage) {
-                await sendMessage(text, { body: { projectId, sessionId } });
+            const activeId = await ensureSession();
+
+            if (!activeId) {
+                throw new Error("Falha ao criar sessão");
             }
+
+            // 2. Chama API
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                body: JSON.stringify({
+                    messages: [...messages, tempUserMsg],
+                    sessionId: activeId,
+                    projectId
+                })
+            });
+
+            if (!response.ok) throw new Error('Erro na API');
+
+            const aiMsg = await response.json();
+
+            // 3. Atualiza com a resposta da Kira
+            setMessages(prev => [...prev, aiMsg] as any);
+
+        } catch (error) {
+            console.error("Chat Error:", error);
+            // Opcional: Mostrar toast de erro
+        } finally {
+            setIsGenerating(false); // Desativa loader
         }
     };
 
     // Clique na Sugestão
     const handleSuggestionClick = async (text: string) => {
-        const sessionId = await ensureSession();
-        if (!sessionId) return;
+        if (isGenerating) return;
+        setLocalInput(text);
+        // Pequeno timeout para permitir que o estado atualize antes de enviar, 
+        // ou chamamos uma função de processamento direto que aceita texto.
+        // Vamos refatorar handleSendMessage para aceitar texto opcional? 
+        // Melhor não complicar o handleSendMessage do form. Vamos fazer inline aqui.
 
-        const sendFn = append || sendMessage;
-        if (typeof sendFn !== 'function') return;
+        setIsGenerating(true);
+        const tempUserMsg = { id: Date.now().toString(), role: 'user', content: text };
+        setMessages(prev => [...prev, tempUserMsg] as any);
 
         try {
-            await sendFn({ role: 'user', content: text }, {
-                body: { projectId, sessionId }
+            const activeId = await ensureSession();
+            if (!activeId) throw new Error("Falha ao criar sessão");
+
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                body: JSON.stringify({
+                    messages: [...messages, tempUserMsg],
+                    sessionId: activeId,
+                    projectId
+                })
             });
-        } catch (e) {
-            if (!append && sendMessage) {
-                await sendMessage(text, { body: { projectId, sessionId } });
-            }
+            if (!response.ok) throw new Error('Erro na API');
+            const aiMsg = await response.json();
+            setMessages(prev => [...prev, aiMsg] as any);
+        } catch (error) {
+            console.error(error);
+        } finally {
+            setIsGenerating(false);
+            setLocalInput(''); // Limpa caso tenha ficado texto
         }
     };
 
@@ -117,15 +185,25 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                 setHistory(prev => prev.filter(s => s.id !== id));
                 if (currentSessionId === id) {
                     setCurrentSessionId(null);
+                    sessionIdRef.current = null;
                     setMessages([]);
                 }
             }
         }
     };
 
-    const handleSelectSession = (id: string) => {
+    const handleSelectSession = async (id: string) => {
         setCurrentSessionId(id);
-        setMessages([]); // Limpa msg atual (Futuro: Carregar msg do banco)
+        sessionIdRef.current = id;
+        // Load messages
+        const res = await getChatMessages(id);
+        if (res.success && res.data) {
+            setMessages(res.data.map((m: any) => ({
+                id: m.id,
+                role: m.role as any,
+                content: m.content
+            })));
+        }
     };
 
     return (
@@ -159,7 +237,11 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                 <div className="w-[260px] flex-shrink-0 border-r border-slate-800 bg-slate-950/50 flex flex-col h-full hidden md:flex">
                     <div className="p-4 border-b border-slate-800 h-16 flex items-center">
                         <Button
-                            onClick={() => { setCurrentSessionId(null); setMessages([]); }}
+                            onClick={() => {
+                                setCurrentSessionId(null);
+                                sessionIdRef.current = null;
+                                setMessages([]);
+                            }}
                             className="w-full justify-start gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-900/20 font-medium"
                         >
                             <Plus className="w-4 h-4" /> Nova Conversa
@@ -178,16 +260,67 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                                 onClick={() => handleSelectSession(session.id)}
                                 className={`text-sm p-2 rounded cursor-pointer flex items-center justify-between group transition-colors ${currentSessionId === session.id ? 'bg-blue-600/20 text-blue-200' : 'text-slate-400 hover:bg-slate-900'}`}
                             >
-                                <div className="flex items-center gap-2 truncate max-w-[180px]">
+                                <div className="flex items-center gap-2 truncate flex-1">
                                     <MessageSquare className="w-3 h-3 flex-shrink-0" />
-                                    <span className="truncate">{session.title || 'Nova Conversa'}</span>
+
+                                    {editingSessionId === session.id ? (
+                                        <div className="flex items-center gap-1 flex-1" onClick={e => e.stopPropagation()}>
+                                            <input
+                                                autoFocus
+                                                type="text"
+                                                value={editingTitle}
+                                                onChange={(e) => setEditingTitle(e.target.value)}
+                                                className="w-full bg-slate-950 border border-blue-500 rounded px-1 active:outline-none focus:outline-none text-xs h-6"
+                                                onKeyDown={async (e) => {
+                                                    if (e.key === 'Enter') {
+                                                        e.stopPropagation();
+                                                        await updateChatSessionTitle(session.id, editingTitle);
+                                                        setEditingSessionId(null);
+                                                        fetchHistory();
+                                                    }
+                                                }}
+                                            />
+                                            <button onClick={async (e) => {
+                                                e.stopPropagation();
+                                                await updateChatSessionTitle(session.id, editingTitle);
+                                                setEditingSessionId(null);
+                                                fetchHistory();
+                                            }} className="text-green-400 hover:text-green-300">
+                                                <Check className="w-3 h-3" />
+                                            </button>
+                                            <button onClick={(e) => {
+                                                e.stopPropagation();
+                                                setEditingSessionId(null);
+                                            }} className="text-slate-500 hover:text-slate-300">
+                                                <X className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <span className="truncate flex-1">{session.title || 'Nova Conversa'}</span>
+                                    )}
                                 </div>
-                                <button
-                                    onClick={(e) => handleDeleteSession(e, session.id)}
-                                    className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
-                                >
-                                    <Trash2 className="w-3 h-3" />
-                                </button>
+                                <div className="flex items-center gap-0.5" onClick={e => e.stopPropagation()}>
+                                    {!editingSessionId && (
+                                        <>
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    setEditingSessionId(session.id);
+                                                    setEditingTitle(session.title || '');
+                                                }}
+                                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-blue-400 transition-opacity"
+                                            >
+                                                <Edit2 className="w-3 h-3" />
+                                            </button>
+                                            <button
+                                                onClick={(e) => handleDeleteSession(e, session.id)}
+                                                className="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-opacity"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         ))}
                     </div>
@@ -256,6 +389,31 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                                     </div>
                                 ))}
                                 <div ref={messagesEndRef} className="h-4" />
+                                {isGenerating && (
+                                    <div className="flex gap-4 items-center mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                                        {/* Avatar com Efeito de Processamento (Radar/Ping) */}
+                                        <div className="relative w-8 h-8 flex-shrink-0">
+                                            <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20 duration-1000"></div>
+                                            <div className="relative w-8 h-8 rounded-full bg-slate-900 border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]">
+                                                <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
+                                            </div>
+                                        </div>
+
+                                        {/* Caixa de Texto 'Glass' com Gradiente */}
+                                        <div className="px-4 py-3 rounded-2xl rounded-tl-none bg-slate-900/40 border border-slate-800/60 backdrop-blur-sm flex items-center gap-3">
+                                            <span className="text-sm font-medium bg-gradient-to-r from-blue-200 via-indigo-200 to-slate-400 bg-clip-text text-transparent animate-pulse">
+                                                Kira está analisando o contexto...
+                                            </span>
+
+                                            {/* Micro-loader sutil */}
+                                            <div className="flex gap-1 h-2 items-center">
+                                                <div className="w-1 h-1 bg-blue-400 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                                                <div className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                                                <div className="w-1 h-1 bg-purple-400 rounded-full animate-bounce"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
                     </div>
@@ -274,7 +432,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                                 disabled={!localInput?.trim()}
                                 className="absolute right-2 top-2 h-10 w-10 bg-blue-600 hover:bg-blue-500 text-white rounded-xl transition-all z-30 size-10 disabled:opacity-50"
                             >
-                                {isLoading ? <span className="animate-spin text-lg">⏳</span> : <Send className="w-5 h-5" />}
+                                {isGenerating ? <span className="animate-spin text-lg">⏳</span> : <Send className="w-5 h-5" />}
                             </Button>
                         </form>
                         <p className="text-center text-xs text-slate-600 mt-3">

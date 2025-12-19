@@ -29,12 +29,12 @@ test('chat flow', async ({ page }) => {
   }
 
   // 2. Open Chat
-  const chatButton = page.locator('button[aria-label="Assistente de Projeto"]');
+  const chatButton = page.locator('button:has-text("Perguntar à Kira")');
   await expect(chatButton).toBeVisible();
   await chatButton.click();
   
   // 3. Send Message
-  const input = page.locator('input[placeholder="Digite sua mensagem..."]');
+  const input = page.getByPlaceholder('Digite sua mensagem para a Kira...');
   await expect(input).toBeVisible();
   await input.fill('Qual o próximo passo?');
   await page.keyboard.press('Enter');
@@ -45,14 +45,8 @@ test('chat flow', async ({ page }) => {
   await expect(userMessageBubble).toBeVisible();
 
   // 5. Verify Assistant Response
-  // Wait for response bubble (bg-slate-100)
-  // We exclude the avatar (which is also bg-slate-100) by checking for specific text classes or structure if possible,
-  // or just by looking for text content.
-  // The message bubble has 'text-slate-900' (from my previous instruction) or just 'text-sm'.
-  
-  // Let's look for the message container specifically.
-  // The assistant bubble has: bg-slate-100 text-slate-900 border border-slate-200
-  const assistantBubble = page.locator('.bg-slate-100.text-slate-900');
+  // The assistant bubble has: bg-slate-900 border border-slate-800 text-slate-200
+  const assistantBubble = page.locator('.bg-slate-900.text-slate-200');
   
   // Wait for any text inside the assistant bubble that is not empty
   await expect(async () => {
