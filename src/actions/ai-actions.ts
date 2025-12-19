@@ -131,12 +131,34 @@ export async function generateAndCreateProject(userDescription: string) {
     }
 }
 
-export async function generateDashboardInsight({
-    total, todo, doing, done, overdue, critical_urgent, critical_safe
-}: {
-    total: number, todo: number, doing: number, done: number, overdue: number, critical_urgent: number, critical_safe: number
-}) {
+export async function generateDashboardInsight(
+    projectId: string,
+    stats: {
+        total: number, todo: number, doing: number, done: number, overdue: number, critical_urgent: number, critical_safe: number
+    },
+    forceRefresh: boolean = false
+) {
     try {
+        // 1. Check Cache
+        if (!forceRefresh) {
+            const project = await db.query.projects.findFirst({
+                where: eq(projects.id, projectId),
+                columns: { aiInsight: true, lastInsightAt: true }
+            });
+
+            if (project?.aiInsight && project.lastInsightAt) {
+                const now = new Date();
+                const diffMs = now.getTime() - new Date(project.lastInsightAt).getTime();
+                const diffHours = diffMs / (1000 * 60 * 60);
+
+                if (diffHours < 4) {
+                    // Valid Cache
+                    return { success: true, insight: project.aiInsight, cached: true };
+                }
+            }
+        }
+
+        // 2. Generate New Insight
         const { text } = await generateText({
             model: openai('gpt-4o'),
             prompt: `
@@ -149,24 +171,24 @@ export async function generateDashboardInsight({
             Você receberá dados de saúde do projeto. Sua missão é avaliar a situação com base em décadas de experiência, identificando o que realmente importa e descartando falsos alarmes.
 
             ## Estrutura do Input
-            - Total de Tarefas: ${total}
-            - A Fazer: ${todo}
-            - Em Andamento: ${doing}
-            - Concluídas: ${done}
-            - Atrasadas (${overdue}): Prioridade Crítica. Prazos já perdidos.
-            - Críticas Urgentes (${critical_urgent}): ALERTA VERMELHO. Tarefas do caminho crítico vencendo em < 5 dias.
-            - Críticas Planejadas (${critical_safe}): Backlog normal. Não é risco imediato.
+            - Total de Tarefas: ${stats.total}
+            - A Fazer: ${stats.todo}
+            - Em Andamento: ${stats.doing}
+            - Concluídas: ${stats.done}
+            - Atrasadas (${stats.overdue}): Prioridade Crítica. Prazos já perdidos.
+            - Críticas Urgentes (${stats.critical_urgent}): ALERTA VERMELHO. Tarefas do caminho crítico vencendo em < 5 dias.
+            - Críticas Planejadas (${stats.critical_safe}): Backlog normal. Não é risco imediato.
 
             ## Diretrizes de Análise
 
-            ### 1. Críticas Planejadas (${critical_safe})
+            ### 1. Críticas Planejadas (${stats.critical_safe})
             - **Ação:** NÃO tratar como problema. É apenas trabalho futuro.
             - **Tom:** Neutro.
 
-            ### 2. Críticas Urgentes (${critical_urgent})
+            ### 2. Críticas Urgentes (${stats.critical_urgent})
             - **Ação:** Se > 0, isso é o INCÊNDIO real. Exige ação imediata.
 
-            ### 3. Atrasadas (${overdue})
+            ### 3. Atrasadas (${stats.overdue})
             - **Ação:** Se > 0, exige correção imediata. Risco materializado.
 
             ## Tom de Voz
@@ -187,7 +209,18 @@ export async function generateDashboardInsight({
           `,
         });
 
-        return { success: true, insight: text };
+        // 3. Update Cache
+        if (text) {
+            await db.update(projects)
+                .set({
+                    aiInsight: text,
+                    lastInsightAt: new Date()
+                })
+                .where(eq(projects.id, projectId))
+                .catch(err => console.error("Failed to update project insight cache:", err));
+        }
+
+        return { success: true, insight: text, cached: false };
     } catch (error) {
         console.error('AI Insight Error:', error);
         return { success: false, insight: "Não foi possível gerar a análise no momento." };

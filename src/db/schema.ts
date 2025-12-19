@@ -7,6 +7,10 @@ export const projects = pgTable("projects", {
     description: text("description"),
     status: text("status").default("planning"), // planning, active, completed
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+
+    // AI Cache
+    aiInsight: text("ai_insight"),
+    lastInsightAt: timestamp("last_insight_at", { withTimezone: true }),
 });
 
 export const tasks = pgTable("tasks", {

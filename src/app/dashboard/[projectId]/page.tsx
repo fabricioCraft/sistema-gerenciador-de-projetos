@@ -107,8 +107,8 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
     // 5. Chart Data
     const chartData = [
         { status: 'todo', label: 'A Fazer', count: todoCount, fill: '#94a3b8' }, // Slate 400
-        { status: 'doing', label: 'Em Andamento', count: doingCount, fill: '#6366f1' }, // Indigo 500
-        { status: 'done', label: 'Concluído', count: doneCount, fill: '#22c55e' }, // Green 500
+        { status: 'doing', label: 'Em Andamento', count: doingCount, fill: '#3b82f6' }, // Blue 500
+        { status: 'done', label: 'Concluído', count: doneCount, fill: '#10b981' }, // Emerald 500
     ];
 
     // 6. AI Stats Object
@@ -214,7 +214,12 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
 
                     {/* Component 3: AI Executive Summary */}
                     <div className="min-h-[140px] shrink-0">
-                        <AIInsightCard stats={aiStats} />
+                        <AIInsightCard
+                            projectId={projectId}
+                            stats={aiStats}
+                            initialInsight={project.aiInsight || undefined}
+                            lastUpdated={project.lastInsightAt}
+                        />
                     </div>
 
                     {/* Immediate Attention List */}
@@ -325,7 +330,7 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
                 {/* Right Column (1/3) - Analytics */}
                 <div className="md:col-span-1 flex flex-col gap-6 h-full">
                     {/* Component 2: Distribution Chart */}
-                    <div className="h-[250px] shrink-0">
+                    <div className="h-[380px] shrink-0">
                         <TaskDistributionChart data={chartData} />
                     </div>
 

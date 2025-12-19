@@ -1,7 +1,7 @@
 import { openai } from '@ai-sdk/openai';
 import { generateText } from 'ai';
 import { db } from '@/db';
-import { chatMessages, tasks } from '@/db/schema';
+import { chatMessages, tasks, chatSessions } from '@/db/schema';
 import { eq } from 'drizzle-orm';
 
 export const maxDuration = 60;
@@ -26,6 +26,45 @@ export async function POST(req: Request) {
         role: 'user',
         content: lastUserMsg.content
       }).catch(err => console.error("Erro ao salvar mensagem do usuário:", err));
+
+      // Lógica "Fire-and-Forget" para gerar título (Não bloqueia o chat)
+      (async () => {
+        try {
+          // 1. Busca apenas o título da sessão atual
+          const currentSession = await db.query.chatSessions.findFirst({
+            where: eq(chatSessions.id, sessionId),
+            columns: { title: true }
+          });
+
+          // 2. A Trava: Só gera se o título for o padrão ("Nova Conversa")
+          // Se o usuário já mudou o assunto ou se já foi gerado antes, ignoramos.
+          if (currentSession && (currentSession.title === 'Nova Conversa' || !currentSession.title)) {
+
+            const { text: newTitle } = await generateText({
+              model: openai('gpt-4o'), // Modelo rápido e barato para resumo
+              prompt: `
+                Analise a primeira mensagem de um usuário para um PM bot:
+                "${lastUserMsg.content}"
+                
+                Gere um título de 3 a 5 palavras que resuma o tópico.
+                Ex: "Atraso no Frontend", "Risco de Orçamento", "Ideia de Feature".
+                Sem aspas.
+              `,
+            });
+
+            // 3. Atualiza no banco
+            if (newTitle) {
+              await db.update(chatSessions)
+                .set({ title: newTitle })
+                .where(eq(chatSessions.id, sessionId));
+
+              console.log(`[TITLE_GEN] Título atualizado para: "${newTitle}"`);
+            }
+          }
+        } catch (error) {
+          console.error("Erro background title gen:", error);
+        }
+      })();
     }
 
     // 3. Montar Contexto (Kira + Dados do Projeto)

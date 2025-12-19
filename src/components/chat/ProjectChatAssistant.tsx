@@ -138,6 +138,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
             // Opcional: Mostrar toast de erro
         } finally {
             setIsGenerating(false); // Desativa loader
+            fetchHistory(); // Atualiza título se tiver sido gerado
         }
     };
 
@@ -174,6 +175,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
         } finally {
             setIsGenerating(false);
             setLocalInput(''); // Limpa caso tenha ficado texto
+            fetchHistory(); // Atualiza título se tiver sido gerado
         }
     };
 
