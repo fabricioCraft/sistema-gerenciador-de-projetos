@@ -1,6 +1,8 @@
 import { LayoutDashboard, Network, Settings, ListTodo, CalendarRange } from 'lucide-react';
 import Link from 'next/link';
 
+import { KiraLogo } from '@/components/ui/kira-logo';
+
 // Helper components for Sidebar menu to keep code clean
 const SidebarMenuItem = ({ children }: { children: React.ReactNode }) => <li>{children}</li>;
 const SidebarMenuButton = ({ asChild, isActive, children }: { asChild?: boolean, isActive?: boolean, children: React.ReactNode }) => {
@@ -25,8 +27,7 @@ export function AppSidebar({ projectId }: { projectId: string }) {
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-[60px] items-center border-b px-6">
                     <Link className="flex items-center gap-2 font-semibold" href="/">
-                        <Network className="h-6 w-6" />
-                        <span className="">AI PMP</span>
+                        <KiraLogo className="scale-90" />
                     </Link>
                 </div>
                 <div className="flex-1 overflow-auto py-2">

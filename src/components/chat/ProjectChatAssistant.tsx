@@ -8,6 +8,7 @@ import { Sheet, SheetTrigger, SheetContent, SheetTitle } from '@/components/ui/s
 import { createChatSession, getChatSessions, deleteChatSession, updateChatSessionTitle, getChatMessages } from '@/actions/chat-actions';
 import { Bot, Send, Plus, MessageSquare, User, Sparkles, Trash2, Edit2, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
+import { KiraLogo } from '@/components/ui/kira-logo';
 
 export function ProjectChatAssistant({ projectId }: { projectId: string }) {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -107,7 +108,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
         };
 
         // setMessages vem do useChat, aceita array.
-        setMessages(prev => [...prev, tempUserMsg] as any);
+        setMessages((prev: any[]) => [...prev, tempUserMsg] as any);
 
         try {
             const activeId = await ensureSession();
@@ -131,7 +132,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
             const aiMsg = await response.json();
 
             // 3. Atualiza com a resposta da Kira
-            setMessages(prev => [...prev, aiMsg] as any);
+            setMessages((prev: any[]) => [...prev, aiMsg] as any);
 
         } catch (error) {
             console.error("Chat Error:", error);
@@ -153,7 +154,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
 
         setIsGenerating(true);
         const tempUserMsg = { id: Date.now().toString(), role: 'user', content: text };
-        setMessages(prev => [...prev, tempUserMsg] as any);
+        setMessages((prev: any[]) => [...prev, tempUserMsg] as any);
 
         try {
             const activeId = await ensureSession();
@@ -169,7 +170,7 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
             });
             if (!response.ok) throw new Error('Erro na API');
             const aiMsg = await response.json();
-            setMessages(prev => [...prev, aiMsg] as any);
+            setMessages((prev: any[]) => [...prev, aiMsg] as any);
         } catch (error) {
             console.error(error);
         } finally {
@@ -332,8 +333,8 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                 <div className="flex-1 flex flex-col h-full relative bg-gradient-to-b from-slate-950 to-slate-900">
                     <div className="h-16 border-b border-slate-800 flex items-center justify-between px-6 flex-shrink-0 bg-slate-950/80 backdrop-blur-md z-10">
                         <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 rounded-full bg-blue-600/20 flex items-center justify-center border border-blue-500/30">
-                                <Bot className="w-5 h-5 text-blue-400" />
+                            <div className="w-10 h-10 rounded-full bg-slate-900/50 flex items-center justify-center border border-indigo-500/20 shadow-[0_0_15px_-3px_rgba(79,70,229,0.2)]">
+                                <KiraLogo iconOnly className="w-8 h-8" />
                             </div>
                             <div>
                                 <h2 className="font-semibold text-white leading-tight">Kira AI</h2>
@@ -346,9 +347,9 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                         {messages.length === 0 ? (
                             <div className="h-full flex flex-col items-center justify-center text-center space-y-8 animate-in fade-in duration-500">
                                 <div className="relative">
-                                    <div className="absolute inset-0 bg-blue-500 blur-3xl opacity-20 rounded-full" />
-                                    <div className="relative w-20 h-20 bg-slate-900 border border-slate-800 rounded-2xl flex items-center justify-center shadow-2xl">
-                                        <Bot className="w-10 h-10 text-blue-400" />
+                                    <div className="absolute inset-0 bg-indigo-500 blur-3xl opacity-20 rounded-full" />
+                                    <div className="relative w-24 h-24 bg-slate-900 border border-slate-800 rounded-3xl flex items-center justify-center shadow-2xl">
+                                        <KiraLogo iconOnly className="w-16 h-16" />
                                     </div>
                                 </div>
                                 <div className="space-y-2 max-w-md">
@@ -373,8 +374,14 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                             <div className="flex flex-col gap-6 max-w-3xl mx-auto pb-6">
                                 {messages.map((m: any) => (
                                     <div key={m.id} className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-700' : 'bg-blue-600/20'}`}>
-                                            {m.role === 'user' ? <User className="w-4 h-4" /> : <Sparkles className="w-4 h-4 text-blue-400" />}
+                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-700' : 'bg-transparent'}`}>
+                                            {m.role === 'user' ? (
+                                                <User className="w-4 h-4" />
+                                            ) : (
+                                                <div className="relative w-9 h-9 flex items-center justify-center rounded-full bg-slate-900/50 border border-indigo-500/20 shadow-[0_0_10px_-2px_rgba(79,70,229,0.3)]">
+                                                    <KiraLogo iconOnly className="w-7 h-7" />
+                                                </div>
+                                            )}
                                         </div>
                                         <div className={`flex flex-col max-w-[85%] space-y-1 ${m.role === 'user' ? 'items-end' : 'items-start'}`}>
                                             <span className="text-xs text-slate-500">{m.role === 'user' ? 'Você' : 'Kira'}</span>
@@ -394,10 +401,11 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                                 {isGenerating && (
                                     <div className="flex gap-4 items-center mt-4 animate-in fade-in slide-in-from-bottom-2 duration-500">
                                         {/* Avatar com Efeito de Processamento (Radar/Ping) */}
-                                        <div className="relative w-8 h-8 flex-shrink-0">
-                                            <div className="absolute inset-0 bg-blue-500 rounded-full animate-ping opacity-20 duration-1000"></div>
-                                            <div className="relative w-8 h-8 rounded-full bg-slate-900 border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]">
-                                                <Sparkles className="w-4 h-4 text-blue-400 animate-pulse" />
+                                        <div className="relative w-10 h-10 flex-shrink-0 flex items-center justify-center">
+                                            {/* Loading Pulse Effect around Kira */}
+                                            <div className="absolute inset-0 bg-indigo-500 rounded-full animate-ping opacity-20 duration-1000"></div>
+                                            <div className="relative w-9 h-9 rounded-full bg-slate-900 border border-indigo-500/30 flex items-center justify-center shadow-[0_0_15px_-3px_rgba(59,130,246,0.3)]">
+                                                <KiraLogo iconOnly className="w-12 h-12" /> {/* Increased size slightly for visual balance in loading state */}
                                             </div>
                                         </div>
 
