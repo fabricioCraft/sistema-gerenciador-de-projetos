@@ -6,7 +6,7 @@ interface KiraLogoProps {
     iconOnly?: boolean;
 }
 
-export const KiraLogo: React.FC<KiraLogoProps> = ({ className, iconOnly = false }) => {
+export const KiraLogo: React.FC<KiraLogoProps> = ({ className, iconOnly = false, showIcon = true }) => {
     // Define animations separately to ensure correct SVG transform origins
     const styles = (
         <style dangerouslySetInnerHTML={{
@@ -117,7 +117,7 @@ export const KiraLogo: React.FC<KiraLogoProps> = ({ className, iconOnly = false 
 
     return (
         <svg
-            viewBox="0 0 180 40"
+            viewBox={showIcon ? "0 0 180 40" : "0 0 130 40"}
             className={cn("h-8 w-auto text-slate-50", className)}
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -126,10 +126,10 @@ export const KiraLogo: React.FC<KiraLogoProps> = ({ className, iconOnly = false 
             {Defs}
 
             {/* Orb Section */}
-            {OrbGroup}
+            {showIcon && OrbGroup}
 
-            {/* Text Section - Shifted to avoid overlap with wider Orb */}
-            <g transform="translate(5, 0)">
+            {/* Text Section - Centered based on mode */}
+            <g transform={showIcon ? "translate(5, 0)" : "translate(-32, 0)"}>
                 {/* Letra K */}
                 <path d="M45 8 V32 M62 8 L45 20 L62 32" stroke="currentColor" strokeWidth="2" strokeLinecap="square" />
 
