@@ -19,7 +19,10 @@ export default function LoginPage() {
     };
 
     return (
-        <AuthLayout>
+        <AuthLayout
+            heroTitle="Retome o controle."
+            heroSubtitle="Seu cronograma está monitorado. Bem-vindo de volta ao comando."
+        >
             <div className="flex flex-col space-y-6">
 
                 {/* Header */}

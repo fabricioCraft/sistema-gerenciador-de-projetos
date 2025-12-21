@@ -5,9 +5,15 @@ import { Quote } from 'lucide-react';
 
 interface AuthLayoutProps {
     children: React.ReactNode;
+    heroTitle?: string;
+    heroSubtitle?: string;
 }
 
-export function AuthLayout({ children }: AuthLayoutProps) {
+export function AuthLayout({
+    children,
+    heroTitle = "Orquestração Inteligente.",
+    heroSubtitle = "Deixe a Kira analisar riscos, prever atrasos e coordenar seu time enquanto você foca no que importa."
+}: AuthLayoutProps) {
     return (
         <div className="min-h-screen w-full flex bg-[#020203] text-white overflow-hidden font-sans selection:bg-indigo-500/30">
 
@@ -55,12 +61,18 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                     </div>
 
                     {/* 3. Copywriting (Slogan) */}
-                    <div className="text-center space-y-4 max-w-lg px-6 animate-in fade-in slide-in-from-bottom-8 duration-1000 delay-300">
-                        <h2 className="text-4xl font-bold tracking-tight text-transparent bg-clip-text bg-gradient-to-b from-white to-slate-400">
-                            Orquestração Inteligente.
+                    {/* 3. Copywriting (Slogan) */}
+                    <div className="mt-12 text-center max-w-lg px-6">
+                        {/* Headline com Gradiente Metálico */}
+                        <h2 className="text-3xl md:text-4xl font-bold tracking-tight mb-4">
+                            <span className="bg-gradient-to-b from-white via-white to-slate-400 bg-clip-text text-transparent">
+                                {heroTitle}
+                            </span>
                         </h2>
+
+                        {/* Subtítulo Descritivo e Elegante */}
                         <p className="text-slate-400 text-lg font-light leading-relaxed">
-                            "Deixe a Kira analisar riscos e prever atrasos enquanto você lidera o time."
+                            "{heroSubtitle}"
                         </p>
                     </div>
 
