@@ -9,6 +9,7 @@ import { eq } from 'drizzle-orm';
 import { revalidatePath } from 'next/cache';
 import { calculateProjectSchedule } from './scheduler';
 import { skipWeekend } from '@/lib/date-utils';
+import { createClient } from '@/utils/supabase/server';
 
 const TaskSchema = z.object({
     title: z.string(),
@@ -31,6 +32,11 @@ function calculatePert(o: number, m: number, p: number) {
 
 export async function generateAndCreateProject(userDescription: string) {
     try {
+        const supabase = await createClient();
+        const { data: { user } } = await supabase.auth.getUser();
+
+        if (!user) throw new Error('Usuário não autenticado');
+
         const { object: projectPlan } = await generateObject({
             model: openai('gpt-5-mini'),
             schema: ProjectSchema,
@@ -50,13 +56,11 @@ export async function generateAndCreateProject(userDescription: string) {
         });
 
         // 1. Create Project
-        const TEST_USER_ID = "c4dfb583-c0d6-4898-bc01-5426475d7709"; // ID do admin manual
-
         const [newProject] = await db.insert(projects).values({
             name: projectPlan.name,
             description: projectPlan.description,
             status: 'planning',
-            userId: TEST_USER_ID,
+            userId: user.id, // ID real do usuário autenticado
         }).returning();
 
         if (!newProject) throw new Error('Failed to create project record');

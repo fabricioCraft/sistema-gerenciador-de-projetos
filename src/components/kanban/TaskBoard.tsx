@@ -17,6 +17,7 @@ import {
     DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { UserAvatar } from '@/components/UserAvatar';
 import {
     Sheet,
     SheetContent,
@@ -343,14 +344,10 @@ export function TaskBoard({ tasks: initialTasks, projectId, highlightedTaskId }:
 
                                                                         {/* Avatar - Shows assigned member or default */}
                                                                         {task.assignedTo ? (
-                                                                            <div
-                                                                                className={`h-6 w-6 rounded-full ${TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.color || 'bg-indigo-500'} flex items-center justify-center ring-2 ring-white dark:ring-gray-900 shrink-0`}
-                                                                                title={TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.name || 'Membro'}
-                                                                            >
-                                                                                <span className="text-[10px] font-bold text-white">
-                                                                                    {TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.initials || '?'}
-                                                                                </span>
-                                                                            </div>
+                                                                            <UserAvatar
+                                                                                name={TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.name}
+                                                                                className="h-6 w-6 ring-2 ring-white dark:ring-gray-900 shrink-0"
+                                                                            />
                                                                         ) : (
                                                                             <div className="h-6 w-6 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center ring-2 ring-white dark:ring-gray-900 shrink-0">
                                                                                 <User className="h-3 w-3 text-slate-400 dark:text-slate-500" />
@@ -413,9 +410,7 @@ export function TaskBoard({ tasks: initialTasks, projectId, highlightedTaskId }:
                                                                             <h3 className="font-semibold text-base">Atividade</h3>
                                                                         </div>
                                                                         <div className="pl-8 flex gap-3">
-                                                                            <div className="h-8 w-8 rounded-full bg-indigo-100 flex items-center justify-center shrink-0">
-                                                                                <User className="h-4 w-4 text-indigo-600" />
-                                                                            </div>
+                                                                            <UserAvatar className="h-8 w-8" name="User" />
                                                                             <div className="w-full border rounded-md p-2 bg-white dark:bg-gray-950 shadow-sm text-sm text-muted-foreground h-12 flex items-center px-4">
                                                                                 Escrever um comentário...
                                                                             </div>
@@ -436,9 +431,12 @@ export function TaskBoard({ tasks: initialTasks, projectId, highlightedTaskId }:
                                                                                     <Users className="h-3.5 w-3.5 mr-2" />
                                                                                     Membros
                                                                                     {task.assignedTo && (
-                                                                                        <span className={`ml-auto w-5 h-5 rounded-full ${TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.color || 'bg-gray-400'} text-white text-[10px] font-bold flex items-center justify-center`}>
-                                                                                            {TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.initials || '?'}
-                                                                                        </span>
+                                                                                        <div className="ml-auto">
+                                                                                            <UserAvatar
+                                                                                                name={TEAM_MEMBERS.find(m => m.id === task.assignedTo)?.name}
+                                                                                                className="w-5 h-5"
+                                                                                            />
+                                                                                        </div>
                                                                                     )}
                                                                                 </Button>
                                                                             </PopoverTrigger>
@@ -458,9 +456,10 @@ export function TaskBoard({ tasks: initialTasks, projectId, highlightedTaskId }:
                                                                                                     }}
                                                                                                     className="cursor-pointer"
                                                                                                 >
-                                                                                                    <div className={`w-6 h-6 rounded-full ${member.color} text-white text-xs font-bold flex items-center justify-center mr-2`}>
-                                                                                                        {member.initials}
-                                                                                                    </div>
+                                                                                                    <UserAvatar
+                                                                                                        name={member.name}
+                                                                                                        className="w-6 h-6 mr-2"
+                                                                                                    />
                                                                                                     <span>{member.name}</span>
                                                                                                     {task.assignedTo === member.id && (
                                                                                                         <Check className="ml-auto h-4 w-4 text-green-500" />

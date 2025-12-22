@@ -1,5 +1,13 @@
-import { LayoutDashboard, Network, Settings, ListTodo, CalendarRange } from 'lucide-react';
 import Link from 'next/link';
+import { AvatarUploader } from '@/components/user/AvatarUploader';
+import { getCurrentUser } from '@/actions/user';
+import { LayoutDashboard, Network, Settings, ListTodo, CalendarRange, LogOut, User as UserIcon } from 'lucide-react';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 import { KiraLogo } from '@/components/ui/kira-logo';
 
@@ -11,22 +19,17 @@ const SidebarMenuButton = ({ asChild, isActive, children }: { asChild?: boolean,
         : 'text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-50'
         }`;
 
-    // Simplification: We assume the child is an <a> tag if asChild is true, but styling wrapper is needed.
-    // Ideally Shadcn Sidebar components should be used if available, but here we use the custom structure from before.
     return <div className={className}>{children}</div>;
 };
 
-export function AppSidebar({ projectId }: { projectId: string }) {
+export async function AppSidebar({ projectId }: { projectId: string }) {
+    const user = await getCurrentUser();
+
     return (
         <div className="hidden border-r bg-gray-100/40 lg:block dark:bg-gray-800/40 w-[240px] h-full">
-            {/* Note: Added fixed positioning and padding to account for header if needed, 
-                 but Layout uses grid. We'll stick to simple div structure but ensure height is correct.
-                 Actually, the grid layout in layout.tsx handles positioning. 
-                 Let's just update the links.
-              */}
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-[60px] items-center border-b px-6">
-                    <Link className="flex items-center gap-2 font-semibold" href="/">
+                    <Link className="flex items-center gap-2 font-semibold" href="/dashboard">
                         <KiraLogo className="scale-90" />
                     </Link>
                 </div>
@@ -75,6 +78,32 @@ export function AppSidebar({ projectId }: { projectId: string }) {
                             </SidebarMenuItem>
                         </ul>
                     </nav>
+                </div>
+
+                {/* User Menu Footer */}
+                <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+                    <div className="flex items-center gap-3 w-full p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors group">
+                        {/* Avatar com Upload - Click handled internally */}
+                        <AvatarUploader user={user} />
+
+                        {/* User Details & Menu */}
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <button className="flex-1 text-left min-w-0 outline-none cursor-pointer">
+                                    <p className="text-sm font-medium text-gray-700 dark:text-gray-200 truncate group-hover:text-gray-900 dark:group-hover:text-white transition-colors">{user?.fullName || 'Usuário'}</p>
+                                    <p className="text-xs text-gray-500 truncate">{user?.email || 'user@example.com'}</p>
+                                </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-[200px]" side="right" sideOffset={10}>
+                                <DropdownMenuItem className="cursor-pointer">
+                                    <UserIcon className="mr-2 h-4 w-4" /> Perfil
+                                </DropdownMenuItem>
+                                <DropdownMenuItem className="text-red-600 cursor-pointer">
+                                    <LogOut className="mr-2 h-4 w-4" /> Sair
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
             </div>
         </div>

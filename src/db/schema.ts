@@ -1,8 +1,16 @@
 import { pgTable, uuid, text, timestamp, integer } from "drizzle-orm/pg-core";
 
+export const users = pgTable("users", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    email: text("email").unique().notNull(),
+    fullName: text("full_name"),
+    avatarUrl: text("avatar_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+});
+
 export const projects = pgTable("projects", {
     id: uuid("id").defaultRandom().primaryKey(),
-    userId: uuid("user_id").notNull(), // Assuming Supabase Auth uses UUIDs
+    userId: uuid("user_id").notNull(), // As referenced in source code, though usually references users.id
     name: text("name").notNull(),
     description: text("description"),
     status: text("status").default("planning"), // planning, active, completed
@@ -56,4 +64,3 @@ export const chatMessages = pgTable("chat_messages", {
     content: text("content").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
-

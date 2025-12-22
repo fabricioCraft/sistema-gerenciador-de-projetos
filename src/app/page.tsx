@@ -1,113 +1,101 @@
-import { db } from '@/db';
-import { projects } from '@/db/schema';
-import { eq, desc } from 'drizzle-orm';
-import { CreateProjectDialog } from '@/components/home/CreateProjectDialog';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { format } from 'date-fns';
-import { ptBR } from 'date-fns/locale';
-import { Rocket, Calendar, ArrowRight } from 'lucide-react';
+import Link from "next/link";
+import { KiraAvatar } from "@/components/ui/kira-avatar";
+import { KiraLogo } from "@/components/ui/kira-logo";
+import { Button } from "@/components/ui/button";
+import { ArrowRight } from "lucide-react";
+import { cookies } from "next/headers";
 
-// ID de teste conforme encontrado em actions/ai-actions.ts
-const TEST_USER_ID = "c4dfb583-c0d6-4898-bc01-5426475d7709";
-
-export const dynamic = 'force-dynamic';
-
-export default async function Home() {
-  const userProjects = await db.select()
-    .from(projects)
-    .where(eq(projects.userId, TEST_USER_ID))
-    .orderBy(desc(projects.createdAt));
+export default async function LandingPage() {
+  const cookieStore = await cookies();
+  const isLoggedIn = cookieStore.has("auth-token");
 
   return (
-    <main className="min-h-screen bg-gray-50 dark:bg-gray-900 p-8">
-      <div className="max-w-6xl mx-auto space-y-8">
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-100 flex flex-col selection:bg-indigo-500/30">
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-              Meus Projetos
-            </h1>
-            <p className="text-muted-foreground mt-1">
-              Gerencie seus planos e acompanhe o progresso.
-            </p>
-          </div>
-          <CreateProjectDialog />
+      {/* Navbar */}
+      {/* Navbar */}
+      <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
+        <div className="flex items-center gap-2">
+          <Link href="/">
+            <KiraLogo className="h-8 w-auto text-white" showIcon={true} />
+          </Link>
         </div>
 
-        {/* Content */}
-        {userProjects.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {userProjects.map((project) => (
-              <Link key={project.id} href={`/dashboard/${project.id}`} className="block group">
-                <Card className="h-full transition-all duration-200 hover:shadow-lg hover:border-blue-500/50 cursor-pointer">
-                  <CardHeader>
-                    <div className="flex justify-between items-start gap-4">
-                      <CardTitle className="text-xl font-semibold leading-tight group-hover:text-blue-600 transition-colors">
-                        {project.name}
-                      </CardTitle>
-                      <StatusBadge status={project.status || 'planning'} />
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <CardDescription className="line-clamp-2 text-sm min-h-[40px]">
-                      {project.description || 'Sem descrição.'}
-                    </CardDescription>
-                  </CardContent>
-                  <CardFooter className="text-xs text-muted-foreground flex items-center gap-2 border-t pt-4">
-                    <Calendar className="h-3 w-3" />
-                    Criado em {project.createdAt ? format(project.createdAt, "d 'de' MMMM", { locale: ptBR }) : '-'}
-                  </CardFooter>
-                </Card>
+        <div className="flex items-center gap-4">
+          {isLoggedIn ? (
+            <Link href="/dashboard">
+              <Button>Ir para o Dashboard</Button>
+            </Link>
+          ) : (
+            <>
+              {/* Botão Entrar -> Login */}
+              <Link href="/login">
+                <Button variant="ghost" className="text-slate-300 hover:text-white hover:bg-white/10">
+                  Entrar
+                </Button>
               </Link>
-            ))}
+
+              {/* Botão Cadastrar -> Signup (Estilo Premium) */}
+              <Link href="/signup">
+                <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-full px-6 shadow-lg shadow-indigo-500/20 border border-white/10 transition-all hover:scale-105">
+                  Cadastrar
+                </Button>
+              </Link>
+            </>
+          )}
+        </div>
+      </nav>
+
+      {/* Hero Section */}
+      <main className="flex-1 flex flex-col items-center justify-center p-6 text-center relative overflow-hidden">
+
+        {/* Ambient Background Glow */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-indigo-500/10 dark:bg-indigo-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col items-center max-w-4xl mx-auto space-y-10 animate-in fade-in zoom-in-95 duration-1000">
+
+          {/* Pulsing Orb */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full animate-pulse" />
+            <KiraAvatar size="2xl" state="idle" className="relative z-10 shadow-2xl shadow-indigo-500/20" />
           </div>
-        )}
-      </div>
-    </main>
-  );
-}
 
-function StatusBadge({ status }: { status: string }) {
-  const styles = {
-    planning: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200",
-    active: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200",
-    completed: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border-blue-200",
-    default: "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-400 border-gray-200"
-  };
+          <div className="space-y-6">
+            <h1 className="text-5xl sm:text-7xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-br from-slate-900 via-slate-700 to-slate-500 dark:from-white dark:via-slate-200 dark:to-slate-500 leading-tight">
+              Não gerencie.<br /> Orquestre.
+            </h1>
 
-  const statusKey = status.toLowerCase() as keyof typeof styles;
-  const className = styles[statusKey] || styles.default;
+            <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mx-auto leading-relaxed">
+              A primeira IA projetada para liderar projetos complexos, prever riscos e eliminar o microgerenciamento.
+            </p>
+          </div>
 
-  const labels = {
-    planning: "Planejamento",
-    active: "Em Andamento",
-    completed: "Concluído"
-  };
+          {/* CTA */}
+          <div className="pt-4">
+            {isLoggedIn ? (
+              <Link href="/dashboard">
+                <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-indigo-500/20 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 transition-all hover:scale-105">
+                  Acessar Dashboard
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/signup">
+                <Button size="lg" className="h-14 px-8 text-lg rounded-full shadow-xl shadow-indigo-500/20 bg-gradient-to-r from-blue-600 to-violet-600 hover:from-blue-500 hover:to-violet-500 border-0 transition-all hover:scale-105">
+                  Conhecer a Kira
+                  <ArrowRight className="ml-2 w-5 h-5" />
+                </Button>
+              </Link>
+            )}
+          </div>
 
-  return (
-    <Badge variant="outline" className={`${className} capitalize whitespace-nowrap`}>
-      {labels[statusKey as keyof typeof labels] || status}
-    </Badge>
-  );
-}
+        </div>
+      </main>
 
-function EmptyState() {
-  return (
-    <div className="flex flex-col items-center justify-center rounded-lg border border-dashed p-12 text-center animate-in fade-in-50">
-      <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-900/20 mb-6">
-        <Rocket className="h-10 w-10 text-blue-500" />
-      </div>
-      <h3 className="text-xl font-semibold mb-2">Nenhum projeto encontrado</h3>
-      <p className="text-muted-foreground max-w-sm mx-auto mb-8">
-        Você ainda não criou nenhum projeto. Utilize nossa IA para gerar seu primeiro plano de projeto completo.
-      </p>
-      {/* O botão já está no header, mas podemos colocar uma call to action aqui também ou apenas instruir */}
-      <CreateProjectDialog />
+      {/* Minimal Footer */}
+      <footer className="py-6 text-center text-sm text-slate-500 dark:text-slate-600">
+        <p>© 2024 Kira AI. All rights reserved.</p>
+      </footer>
     </div>
   );
 }

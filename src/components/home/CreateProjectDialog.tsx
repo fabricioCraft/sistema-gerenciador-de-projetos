@@ -15,7 +15,7 @@ import { Loader2, Plus, Sparkles, Rocket } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { generateAndCreateProject } from '@/actions/ai-actions';
 
-export function CreateProjectDialog() {
+export function CreateProjectDialog({ trigger }: { trigger?: React.ReactNode }) {
     const [open, setOpen] = useState(false);
     const [description, setDescription] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -44,9 +44,11 @@ export function CreateProjectDialog() {
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-                <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
-                    Novo Projeto <Plus className="h-4 w-4" />
-                </Button>
+                {trigger ? trigger : (
+                    <Button className="gap-2 bg-blue-600 hover:bg-blue-700 text-white">
+                        Novo Projeto <Plus className="h-4 w-4" />
+                    </Button>
+                )}
             </DialogTrigger>
             <DialogContent className="sm:max-w-[600px]">
                 <DialogHeader>

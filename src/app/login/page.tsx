@@ -1,21 +1,24 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useTransition } from 'react';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthLayout } from '@/components/auth/AuthLayout';
+import { login, signInWithGoogle } from '@/app/actions/auth';
+import { toast } from 'sonner';
 
 export default function LoginPage() {
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPending, startTransition] = useTransition();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        // Simular delay de login
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setIsLoading(false);
+    const handleSubmit = async (formData: FormData) => {
+        startTransition(async () => {
+            const result = await login(formData);
+            if (result?.error) {
+                toast.error(result.error);
+            }
+        });
     };
 
     return (
@@ -34,12 +37,13 @@ export default function LoginPage() {
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-4">
+                <form action={handleSubmit} className="space-y-4">
 
                     <div className="space-y-2">
                         <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider pl-1">Email</label>
                         <div className="relative">
                             <Input
+                                name="email"
                                 type="email"
                                 placeholder="nome@empresa.com"
                                 className="bg-zinc-900/50 border border-zinc-800 text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl h-12 px-4 w-full"
@@ -52,6 +56,7 @@ export default function LoginPage() {
                         <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider pl-1">Senha</label>
                         <div className="relative">
                             <Input
+                                name="password"
                                 type="password"
                                 className="bg-zinc-900/50 border border-zinc-800 text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl h-12 px-4 w-full"
                                 required
@@ -61,10 +66,10 @@ export default function LoginPage() {
 
                     <Button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isPending}
                         className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-medium rounded-xl shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/40 transition-all active:scale-[0.98]"
                     >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar na Plataforma"}
+                        {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar na Plataforma"}
                     </Button>
 
                 </form>
@@ -83,6 +88,7 @@ export default function LoginPage() {
                 <Button
                     variant="outline"
                     type="button"
+                    onClick={() => signInWithGoogle()}
                     className="w-full h-12 rounded-xl border-slate-800 bg-transparent hover:bg-slate-900 text-slate-300 hover:text-white transition-all hover:border-slate-700"
                 >
                     <svg className="mr-2 h-5 w-5" viewBox="0 0 24 24">

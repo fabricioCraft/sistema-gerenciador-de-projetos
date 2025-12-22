@@ -1,11 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useTransition } from 'react';
 import Link from 'next/link';
 import { Mail, Lock, User, Eye, EyeOff, Loader2, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { AuthLayout } from '@/components/auth/AuthLayout';
+import { signup, signInWithGoogle } from '@/app/actions/auth';
+import { toast } from 'sonner';
 
 // Reuse Glass Input Wrapper
 const GlassInputWrapper = ({ children, className }: { children: React.ReactNode; className?: string }) => (
@@ -16,14 +18,15 @@ const GlassInputWrapper = ({ children, className }: { children: React.ReactNode;
 
 export default function SignupPage() {
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [isPending, startTransition] = useTransition();
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-        // Simular delay de cadastro
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setIsLoading(false);
+    const handleSubmit = async (formData: FormData) => {
+        startTransition(async () => {
+            const result = await signup(formData);
+            if (result?.error) {
+                toast.error(result.error);
+            }
+        });
     };
 
     return (
@@ -39,7 +42,7 @@ export default function SignupPage() {
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-5">
+                <form action={handleSubmit} className="space-y-5">
 
                     <div className="space-y-4">
                         {/* Name Field */}
@@ -47,6 +50,7 @@ export default function SignupPage() {
                             <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider pl-1">Nome Completo</label>
                             <div className="relative">
                                 <Input
+                                    name="full_name"
                                     type="text"
                                     placeholder="Seu nome"
                                     className="bg-zinc-900/50 border border-zinc-800 text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl h-12 px-4 w-full"
@@ -60,6 +64,7 @@ export default function SignupPage() {
                             <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider pl-1">Email</label>
                             <div className="relative">
                                 <Input
+                                    name="email"
                                     type="email"
                                     placeholder="seu@email.com"
                                     className="bg-zinc-900/50 border border-zinc-800 text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl h-12 px-4 w-full"
@@ -73,6 +78,7 @@ export default function SignupPage() {
                             <label className="text-xs font-medium text-zinc-400 uppercase tracking-wider pl-1">Senha</label>
                             <div className="relative">
                                 <Input
+                                    name="password"
                                     type={showPassword ? "text" : "password"}
                                     placeholder="Crie uma senha forte"
                                     className="bg-zinc-900/50 border border-zinc-800 text-white placeholder:text-zinc-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl h-12 px-4 w-full"
@@ -92,10 +98,10 @@ export default function SignupPage() {
 
                     <Button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isPending}
                         className="w-full h-12 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/40 transition-all active:scale-[0.98] mt-4"
                     >
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                        {isPending ? <Loader2 className="w-5 h-5 animate-spin" /> : (
                             <span className="flex items-center justify-center gap-2 font-medium">
                                 Criar conta gratuita <ArrowRight className="w-4 h-4" />
                             </span>
@@ -122,7 +128,7 @@ export default function SignupPage() {
                 <Button
                     variant="outline"
                     type="button"
-                    // onClick={handleGoogleSignUp} // Conectar lógica futura aqui
+                    onClick={() => signInWithGoogle()}
                     className="w-full h-12 rounded-xl border-zinc-800 bg-zinc-900/50 hover:bg-zinc-800 text-zinc-300 font-medium transition-all hover:text-white"
                 >
                     <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">

@@ -9,6 +9,7 @@ import { createChatSession, getChatSessions, deleteChatSession, updateChatSessio
 import { Bot, Send, Plus, MessageSquare, User, Sparkles, Trash2, Edit2, Check, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import { KiraLogo } from '@/components/ui/kira-logo';
+import { UserAvatar } from '@/components/UserAvatar';
 
 export function ProjectChatAssistant({ projectId }: { projectId: string }) {
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
@@ -374,9 +375,9 @@ export function ProjectChatAssistant({ projectId }: { projectId: string }) {
                             <div className="flex flex-col gap-6 max-w-3xl mx-auto pb-6">
                                 {messages.map((m: any) => (
                                     <div key={m.id} className={`flex gap-4 ${m.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                                        <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${m.role === 'user' ? 'bg-slate-700' : 'bg-transparent'}`}>
+                                        <div className={`w-8 h-8 flex-shrink-0 flex items-center justify-center rounded-full ${m.role === 'user' ? '' : 'bg-transparent'}`}>
                                             {m.role === 'user' ? (
-                                                <User className="w-4 h-4" />
+                                                <UserAvatar name="Você" className="w-8 h-8" />
                                             ) : (
                                                 <div className="relative w-9 h-9 flex items-center justify-center rounded-full bg-slate-900/50 border border-indigo-500/20 shadow-[0_0_10px_-2px_rgba(79,70,229,0.3)]">
                                                     <KiraLogo iconOnly className="w-7 h-7" />
