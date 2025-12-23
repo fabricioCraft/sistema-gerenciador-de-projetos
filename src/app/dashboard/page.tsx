@@ -1,13 +1,14 @@
 import { db } from '@/db';
 import { projects } from '@/db/schema';
 import { eq, desc } from 'drizzle-orm';
-import { CreateProjectDialog } from '@/components/home/CreateProjectDialog';
+import { ProjectKickoffModal } from '@/components/dashboard/ProjectKickoffModal';
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { Rocket, Calendar } from 'lucide-react';
+import { Plus, Calendar } from 'lucide-react';
 import { createClient } from '@/utils/supabase/server';
 import { redirect } from 'next/navigation';
 import { DashboardEmptyState } from '@/components/dashboard/DashboardEmptyState';
@@ -33,16 +34,22 @@ export default async function DashboardProjects() {
 
                 {/* Header only shows if there are projects, otherwise EmptyState handles the hero */}
                 {userProjects.length > 0 && (
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mb-8">
                         <div>
-                            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
+                            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
                                 Meus Projetos
                             </h1>
-                            <p className="text-muted-foreground mt-1">
+                            <p className="text-slate-400 mt-1">
                                 Gerencie seus planos e acompanhe o progresso.
                             </p>
                         </div>
-                        <CreateProjectDialog />
+
+                        {/* Botão Novo Projeto */}
+                        <ProjectKickoffModal defaultPrompt="">
+                            <Button className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white shadow-lg shadow-indigo-500/20 rounded-full px-6 transition-all hover:scale-105">
+                                <Plus className="mr-2 h-4 w-4" /> Novo Projeto
+                            </Button>
+                        </ProjectKickoffModal>
                     </div>
                 )}
 

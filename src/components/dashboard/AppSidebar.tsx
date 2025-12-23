@@ -30,7 +30,7 @@ export async function AppSidebar({ projectId }: { projectId: string }) {
             <div className="flex h-full max-h-screen flex-col gap-2">
                 <div className="flex h-[60px] items-center border-b px-6">
                     <Link className="flex items-center gap-2 font-semibold" href="/dashboard">
-                        <KiraLogo className="scale-90" />
+                        <KiraLogo className="h-8 w-auto text-slate-900 dark:text-white" />
                     </Link>
                 </div>
                 <div className="flex-1 overflow-auto py-2">

@@ -17,7 +17,7 @@ export default async function LandingPage() {
       <nav className="flex items-center justify-between px-6 py-6 max-w-7xl mx-auto w-full">
         <div className="flex items-center gap-2">
           <Link href="/">
-            <KiraLogo className="h-8 w-auto text-white" showIcon={true} />
+            <KiraLogo className="h-8 w-auto text-slate-900 dark:text-white" showIcon={true} />
           </Link>
         </div>
 

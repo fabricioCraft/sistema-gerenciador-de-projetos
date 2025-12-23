@@ -30,6 +30,7 @@ export function KiraLogo({ className, showIcon = true, iconOnly = false }: { cla
 
     return (
         <div className={cn("flex items-center gap-3 select-none", className)}>
+
             <svg
                 viewBox="0 0 160 40"
                 className="h-full w-auto"
@@ -55,18 +56,40 @@ export function KiraLogo({ className, showIcon = true, iconOnly = false }: { cla
 
                 {/* Ícone Orbe (Opcional) */}
                 {showIcon && (
-                    <g transform="translate(18, 20)">
-                        {/* Anéis finos e elegantes */}
-                        <circle cx="0" cy="0" r="14" stroke="url(#kira-gradient)" strokeWidth="0.5" opacity="0.5" />
-                        <path d="M -10 10 A 14 14 0 0 0 10 10" stroke="url(#kira-gradient)" strokeWidth="1.5" strokeLinecap="round" opacity="0.8" />
+                    <g>
+                        {/* 1. Anel Externo (Dados) - Gira devagar */}
+                        <circle
+                            cx="18" cy="20" r="14"
+                            stroke="url(#kira-gradient)"
+                            strokeWidth="0.5"
+                            strokeDasharray="2 4" // Tracejado tecnológico
+                            className="animate-orb-slow opacity-60"
+                        />
 
-                        {/* Núcleo Sólido */}
-                        <circle cx="0" cy="0" r="5" fill="white" />
+                        {/* 2. Arco Interno (Processamento) - Gira ao contrário */}
+                        <path
+                            d="M 8 20 A 10 10 0 0 1 28 20" // Um semi-círculo
+                            stroke="url(#kira-gradient)"
+                            strokeWidth="1.5"
+                            strokeLinecap="round"
+                            fill="none"
+                            className="animate-orb-fast opacity-80"
+                        />
+
+                        {/* 3. Núcleo (A Consciência) - Pulsa */}
+                        <circle
+                            cx="18" cy="20" r="5"
+                            fill="white"
+                            className="animate-core"
+                        />
+
+                        {/* 4. Glow Estático (Para dar profundidade) */}
+                        <circle cx="18" cy="20" r="10" fill="url(#kira-gradient)" filter="blur(12px)" opacity="0.3" />
                     </g>
                 )}
 
                 {/* TIPOGRAFIA (Sólida, Branca, Sem Animação de Borda) */}
-                <g stroke="currentColor" strokeWidth="2.5" strokeLinecap="square" className="text-white">
+                <g stroke="currentColor" strokeWidth="2.5" strokeLinecap="square">
                     {/* K: Deslocado para dar espaço ao ícone se necessário */}
                     <path d="M50 8 V32 M67 8 L50 20 L67 32" transform={showIcon ? "translate(0,0)" : "translate(-35,0)"} />
 
