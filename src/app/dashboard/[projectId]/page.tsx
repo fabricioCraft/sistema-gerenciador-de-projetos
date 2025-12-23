@@ -12,6 +12,7 @@ import { format, isBefore, startOfToday, addDays, differenceInCalendarDays } fro
 import { ptBR } from 'date-fns/locale';
 import { TaskDistributionChart } from '@/components/dashboard/TaskDistributionChart';
 import { AIInsightCard } from '@/components/dashboard/AIInsightCard';
+import { TeamManagerDialog } from '@/components/team/TeamManagerDialog';
 
 export default async function DashboardPage({ params }: { params: Promise<{ projectId: string }> }) {
     const paramsData = await params;
@@ -139,6 +140,9 @@ export default async function DashboardPage({ params }: { params: Promise<{ proj
                     <p className="text-muted-foreground mt-1 text-sm">Visão Geral do Projeto & Analytics</p>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Botão Compartilhar */}
+                    <TeamManagerDialog projectId={projectId} />
+
                     <div className="text-right hidden md:block">
                         <div className="text-sm font-medium text-slate-500">Previsão de Entrega</div>
                         <div className="text-lg font-semibold flex items-center justify-end gap-2">

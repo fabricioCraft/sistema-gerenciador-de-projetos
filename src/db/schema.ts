@@ -64,3 +64,16 @@ export const chatMessages = pgTable("chat_messages", {
     content: text("content").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
 });
+
+// Project Members / Team Collaboration
+export const projectMembers = pgTable('project_members', {
+    id: uuid('id').defaultRandom().primaryKey(),
+    projectId: uuid('project_id').references(() => projects.id, { onDelete: 'cascade' }).notNull(),
+    // userId pode ser nulo se o usuário convidado ainda não tiver conta na plataforma
+    userId: uuid('user_id').references(() => users.id, { onDelete: 'set null' }),
+    email: text('email').notNull(),
+    role: text('role').default('member'), // 'owner', 'admin', 'member'
+    status: text('status').default('pending'), // 'active' (tem conta) ou 'pending' (só email)
+    invitedAt: timestamp('invited_at', { withTimezone: true }).defaultNow(),
+});
+
